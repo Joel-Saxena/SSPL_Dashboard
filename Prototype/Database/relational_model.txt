@@ -1,0 +1,17 @@
+employee(id, firstname, middlename, lastname, email, gender, salary, aadhaar, education_qualification)
+    - Primary Key: id
+    - Unique: aadhaar
+
+phone_number(emp_id, phone_no)
+    - Primary Key: (emp_id, phone_no)
+    - Foreign Key: emp_id → employee(id)
+
+administrator(id, supervisor_id)
+    - Primary Key: id
+    - Foreign Key: id → employee(id)
+    - Foreign Key: supervisor_id → administrator(id)
+
+scientist(emp_id, category, research_area, administrator_id)
+    - Primary Key: emp_id
+    - Foreign Key: emp_id → employee(id)
+    - Foreign Key: administrator_id → administrator(id)
