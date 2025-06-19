@@ -29,10 +29,10 @@ To develop a centralized, digital solution that streamlines the management of se
 | Layer        | Technology              |
 |--------------|--------------------------|
 | Frontend     | React.js / HTML / CSS    |
-| Backend      | Node.js / Express OR Django (TBD) |
-| Database     | MongoDB / MySQL / PostgreSQL |
+| Backend      | Node.js / Express  |
+| Database     | MySQL |
 | Auth         | JWT / Role-based system  |
-| Deployment   | GitHub + Vercel / Render / Railway |
+| Deployment   | GitHub + DRDO server |
 
 ---
 
