@@ -1,0 +1,82 @@
+Entity: Employee
+----------------
+Attributes:
+- id (PK)
+- firstname (NOT NULL)
+- middlename (NULL allowed)
+- lastname (NOT NULL)
+- email (UNIQUE, NOT NULL, regex enforced)
+- dob (NOT NULL, must be past date)
+- gender (ENUM: 'M', 'F', 'O', NOT NULL)
+- aadhaar (UNIQUE, NOT NULL, 12-digit format)
+- education_qualification (NOT NULL)
+- designation (NOT NULL)
+- department (NOT NULL)
+- date_of_joining (NOT NULL)
+
+Entity: Phone_Number
+---------------------
+Attributes:
+- emp_id (PK, FK → Employee.id)
+- phone_no (PK, regex enforced)
+
+Entity: Address
+----------------
+Attributes:
+- emp_id (PK, FK → Employee.id)
+- street (NOT NULL)
+- city (NOT NULL)
+- state (NOT NULL)
+- pincode (NOT NULL, regex enforced)
+
+Entity: Administrator
+----------------------
+Attributes:
+- id (PK, FK → Employee.id)
+- supervisor_id (FK → Administrator.id, nullable)
+
+Entity: Scientist
+------------------
+Attributes:
+- emp_id (PK, FK → Employee.id)
+- category (ENUM: 'A', 'B', 'C', 'D', NOT NULL)
+- research_area (NOT NULL)
+- administrator_id (FK → Administrator.id, nullable)
+
+Entity: Salary
+---------------
+Attributes:
+- emp_id (PK, FK → Employee.id)
+- effective_from (PK)
+- pay_grade (NOT NULL)
+- basic_salary (NOT NULL, ≥ 0)
+- allowances (DEFAULT 0, ≥ 0)
+- deductions (DEFAULT 0, ≥ 0)
+
+Entity: Leave_Record
+---------------------
+Attributes:
+- leave_id (PK)
+- emp_id (FK → Employee.id)
+- leave_type (ENUM: 'Sick', 'Casual', 'Earned', 'Maternity', 'Paternity', 'Other', NOT NULL)
+- start_date (NOT NULL)
+- end_date (NOT NULL, end_date ≥ start_date)
+- status (ENUM: 'Pending', 'Approved', 'Rejected', DEFAULT 'Pending')
+- remarks (optional)
+
+Entity: Document
+-----------------
+Attributes:
+- doc_id (PK)
+- emp_id (FK → Employee.id)
+- doc_type (NOT NULL)
+- upload_date (DEFAULT CURRENT_DATE)
+- file_path (NOT NULL)
+
+Entity: Users
+--------------
+Attributes:
+- username (PK, regex: alphanumeric + underscore, ≥ 5 characters)
+- emp_id (UNIQUE, FK → Employee.id)
+- password_hash (NOT NULL)
+- role (ENUM: 'admin', 'scientist', NOT NULL)
