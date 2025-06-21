@@ -3,6 +3,7 @@ const pool = require('../config/db');
 
 // TODO: All logic that ensures 'Only allow update if scientist is in admin's group" will be based on JWT token later.
 
+// ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
 // Get all scientists in admin's group
 exports.getScientistsInGroup = async (req, res) => {
   try {
@@ -18,6 +19,7 @@ exports.getScientistsInGroup = async (req, res) => {
   }
 };
 
+// ROUTE 2: Update scientist details (PUT /api/admin/scientist/:id)
 // Update scientist details
 exports.updateScientistDetails = async (req, res) => {
   try {
@@ -46,6 +48,7 @@ exports.updateScientistDetails = async (req, res) => {
   }
 };
 
+// ROUTE 3: Search scientist by name (GET /api/admin/search)
 // Search scientist by name
 exports.searchScientistByName = async (req, res) => {
   try {
@@ -64,6 +67,7 @@ exports.searchScientistByName = async (req, res) => {
   }
 };
 
+// ROUTE 4: Get complete scientist details (GET /api/admin/scientist/:id)
 // Get complete scientist details
 exports.getCompleteScientistDetails = async (req, res) => {
   try {
