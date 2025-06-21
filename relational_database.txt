@@ -1,0 +1,21 @@
+super_admin(id, username, password)
+    - Primary Key: id
+    - Unique: username
+
+admin_groups(id, group_name, grade_start, grade_end)
+    - Primary Key: id
+    - Unique: group_name
+
+admin_employees(id, emp_no, name, password, date_of_joining, group_id)
+    - Primary Key: id
+    - Foreign Key: group_id → admin_groups(id)
+    - Unique: emp_no
+
+scientists(id, emp_no, name, age, gender, phone, email, qualification, date_of_joining, department, current_grade, group_id)
+    - Primary Key: id
+    - Foreign Key: group_id → admin_groups(id)
+    - Unique: emp_no
+
+scientist_history(id, scientist_id, type, title, description, amount, from_date, to_date, created_at)
+    - Primary Key: id
+    - Foreign Key: scientist_id → scientists(id)
