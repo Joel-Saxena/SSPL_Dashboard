@@ -1,6 +1,6 @@
-const pool = require('../config/db');
+const pool = require('../db_config/db_connection');
 
-// Create new group
+// ROUTE 1: Create new group (POST /api/supervisor/group)
 exports.createGroup = async (req, res) => {
   const { group_name } = req.body;
   if (!group_name) {
@@ -27,7 +27,7 @@ exports.createGroup = async (req, res) => {
   }
 };
 
-// Add new admin
+// ROUTE 2: Add new admin (POST /api/supervisor/admin)
 exports.addAdmin = async (req, res) => {
   const { 
     employeeData, 
@@ -101,7 +101,7 @@ exports.addAdmin = async (req, res) => {
   }
 };
 
-// Add new scientist
+// ROUTE 3: Add new scientist (POST /api/supervisor/scientist)
 exports.addScientist = async (req, res) => {
   const { 
     employeeData, 
@@ -179,7 +179,7 @@ exports.addScientist = async (req, res) => {
   }
 };
 
-// Assign admin to group
+// ROUTE 4: Update admin's group (PUT /api/supervisor/admin/group)
 exports.assignAdminToGroup = async (req, res) => {
   const { admin_id, group_id } = req.body;
   if (!admin_id || !group_id) {
@@ -209,7 +209,7 @@ exports.assignAdminToGroup = async (req, res) => {
   }
 };
 
-// Get group hierarchy
+// ROUTE 5: Get group hierarchy (GET /api/supervisor/groups)
 exports.getGroupHierarchy = async (req, res) => {
   try {
     // Get all groups
@@ -265,51 +265,8 @@ exports.getGroupHierarchy = async (req, res) => {
   }
 };
 
-// Update admins of a group
-exports.updateAdminsOfGroup = async (req, res) => {
-  const { group_id, admin_ids } = req.body;
-  if (!group_id || !admin_ids || !Array.isArray(admin_ids)) {
-    return res.status(400).json({ 
-      error: "Group ID and array of Admin IDs are required" 
-    });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Clear existing group assignments
-    await client.query(
-      `UPDATE administrator 
-       SET group_id = NULL 
-       WHERE group_id = $1`,
-      [group_id]
-    );
-
-    // Assign new admins
-    for (const admin_id of admin_ids) {
-      await client.query(
-        `UPDATE administrator 
-         SET group_id = $1 
-         WHERE id = $2`,
-        [group_id, admin_id]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.json({ 
-      message: `Group admins updated successfully for group ${group_id}` 
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error(error.message);
-    res.status(500).json({ error: "Server error" });
-  } finally {
-    client.release();
-  }
-};
-
-// Change grades managed in a group
+// ROUTE 6: Change grades managed in a group (PUT /api/supervisor/group/grades)
+// Request body: { group_id, grades } (grades is an array)
 exports.changeGroupGrades = async (req, res) => {
   const { group_id, grades } = req.body;
   if (!group_id || !grades || !Array.isArray(grades)) {

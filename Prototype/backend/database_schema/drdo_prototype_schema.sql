@@ -1,7 +1,9 @@
 -- SQL script to create the updated DRDO prototype schema (MySQL)
 
+
 CREATE TABLE employee (
-    id INT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    password VARCHAR(255) NOT NULL,
     firstname VARCHAR(50),
     middlename VARCHAR(50),
     lastname VARCHAR(50),
@@ -20,7 +22,7 @@ CREATE TABLE phone_number (
 );
 
 CREATE TABLE `group` (
-    group_id INT PRIMARY KEY,
+    group_id INT PRIMARY KEY AUTO_INCREMENT,
     group_name VARCHAR(100)
 );
 

@@ -1,5 +1,6 @@
 // Handles login for admin/supervisor
-const pool = require('../config/db');
+const pool = require('../db_config/db_connection');
+
 // ROUTE 1: Login (POST /api/auth/login)
 // Allows admin or scientist to login with emp_id and password
 exports.login = async (req, res) => {

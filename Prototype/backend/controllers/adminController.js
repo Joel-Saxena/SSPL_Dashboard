@@ -1,5 +1,5 @@
 // Handles all admin functionalities (for scientists in their group only)
-const pool = require('../config/db');
+const pool = require('../db_config/db_connection');
 
 // TODO: All logic that ensures 'Only allow update if scientist is in admin's group" will be based on JWT token later.
 
@@ -41,7 +41,12 @@ exports.updateScientistDetails = async (req, res) => {
         `UPDATE scientist SET category = COALESCE(?, category), research_area = COALESCE(?, research_area), grade = COALESCE(?, grade) WHERE emp_id = ?`,
         [category, research_area, grade, sciId]
       );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'No scientist found or nothing updated' });
+      }
     }
+    
     res.json({ message: 'Scientist updated successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Error updating scientist' });

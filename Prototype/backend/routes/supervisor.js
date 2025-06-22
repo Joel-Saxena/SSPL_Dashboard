@@ -14,7 +14,7 @@ router.post('/admin', supervisorController.addAdmin);
 // Request body: { employeeData, category, research_area, grade, group_id }
 router.post('/scientist', supervisorController.addScientist);
 
-// ROUTE 4: Assign admin to group (PUT /api/supervisor/admin/group)
+// ROUTE 4: Update admin's group (PUT /api/supervisor/admin/group)
 // Request body: { admin_id, group_id }
 router.put('/admin/group', supervisorController.assignAdminToGroup);
 
@@ -22,11 +22,7 @@ router.put('/admin/group', supervisorController.assignAdminToGroup);
 // Returns complete group hierarchy with admins, scientists, and managed grades
 router.get('/groups', supervisorController.getGroupHierarchy);
 
-// ROUTE 6: Update admins of a group (PUT /api/supervisor/group/admins)
-// Request body: { group_id, admin_ids } (admin_ids is an array)
-router.put('/group/admins', supervisorController.updateAdminsOfGroup);
-
-// ROUTE 7: Change grades managed in a group (PUT /api/supervisor/group/grades)
+// ROUTE 6: Change grades managed in a group (PUT /api/supervisor/group/grades)
 // Request body: { group_id, grades } (grades is an array)
 router.put('/group/grades', supervisorController.changeGroupGrades);
 
