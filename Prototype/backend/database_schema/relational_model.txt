@@ -1,0 +1,30 @@
+employee(id, password, firstname, middlename, lastname, email, gender, salary, aadhaar, education_qualification)
+    - Primary Key: id 
+    - Unique: aadhaar
+    - password: Required 
+
+phone_number(emp_id, phone_no)
+    - Primary Key: (emp_id, phone_no)
+    - Foreign Key: emp_id → employee(id) 
+
+group(group_id, group_name)
+    - Primary Key: group_id 
+
+administrator(id, supervisor_id, group_id)
+    - Primary Key: id
+    - Foreign Key: id → employee(id) 
+    - Foreign Key: supervisor_id → administrator(id) 
+    - Foreign Key: group_id → group(group_id) 
+
+scientist(emp_id, category, research_area, grade, group_id)
+    - Primary Key: emp_id
+    - Foreign Key: emp_id → employee(id) 
+    - Foreign Key: group_id → group(group_id) 
+
+managed_scientist_grade(group_id, scientist_grade)
+    - Primary Key: (group_id, scientist_grade)
+    - Foreign Key: group_id → group(group_id) 
+
+history(sci_id, other_fields_TBD)
+    - Primary Key: sci_id
+    - Foreign Key: sci_id → scientist(emp_id) 
