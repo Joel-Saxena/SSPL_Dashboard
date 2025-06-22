@@ -22,8 +22,4 @@ router.put('/admin/group', supervisorController.assignAdminToGroup);
 // Returns complete group hierarchy with admins, scientists, and managed grades
 router.get('/groups', supervisorController.getGroupHierarchy);
 
-// ROUTE 6: Change grades managed in a group (PUT /api/supervisor/group/grades)
-// Request body: { group_id, grades } (grades is an array)
-router.put('/group/grades', supervisorController.changeGroupGrades);
-
 module.exports = router;

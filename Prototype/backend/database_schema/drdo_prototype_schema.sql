@@ -18,6 +18,8 @@ CREATE TABLE phone_number (
     phone_no VARCHAR(15),
     PRIMARY KEY (emp_id, phone_no),
     FOREIGN KEY (emp_id) REFERENCES employee(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE `group` (
@@ -29,7 +31,9 @@ CREATE TABLE administrator (
     id INT PRIMARY KEY,
     supervisor_id INT NOT NULL,
     group_id INT,
-    FOREIGN KEY (id) REFERENCES employee(id),
+    FOREIGN KEY (id) REFERENCES employee(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     FOREIGN KEY (supervisor_id) REFERENCES administrator(id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
@@ -44,7 +48,9 @@ CREATE TABLE scientist (
     research_area VARCHAR(100),
     grade CHAR(1),
     group_id INT,
-    FOREIGN KEY (emp_id) REFERENCES employee(id),
+    FOREIGN KEY (emp_id) REFERENCES employee(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     FOREIGN KEY (group_id) REFERENCES `group`(group_id)
         ON DELETE SET NULL
         ON UPDATE CASCADE
@@ -63,4 +69,6 @@ CREATE TABLE history (
     sci_id INT PRIMARY KEY,
     -- Add additional fields as needed for historical records
     FOREIGN KEY (sci_id) REFERENCES scientist(emp_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
