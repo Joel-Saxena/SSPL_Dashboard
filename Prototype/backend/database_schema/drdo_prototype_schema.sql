@@ -1,4 +1,4 @@
--- SQL script to create the updated DRDO prototype schema (MySQL)
+-- SQL script to create the DRDO prototype DB (MySQL)
 
 CREATE TABLE employee (
     id INT PRIMARY KEY AUTO_INCREMENT,
