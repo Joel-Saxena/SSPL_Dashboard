@@ -1,6 +1,5 @@
 -- SQL script to create the updated DRDO prototype schema (MySQL)
 
-
 CREATE TABLE employee (
     id INT PRIMARY KEY AUTO_INCREMENT,
     password VARCHAR(255) NOT NULL,
@@ -28,11 +27,11 @@ CREATE TABLE `group` (
 
 CREATE TABLE administrator (
     id INT PRIMARY KEY,
-    supervisor_id INT,
+    supervisor_id INT NOT NULL,
     group_id INT,
     FOREIGN KEY (id) REFERENCES employee(id),
     FOREIGN KEY (supervisor_id) REFERENCES administrator(id)
-        ON DELETE SET NULL
+        ON DELETE RESTRICT
         ON UPDATE CASCADE,
     FOREIGN KEY (group_id) REFERENCES `group`(group_id)
         ON DELETE SET NULL

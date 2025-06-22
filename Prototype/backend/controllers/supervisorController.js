@@ -8,18 +8,16 @@ exports.createGroup = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      'INSERT INTO "group" (group_name) VALUES ($1) RETURNING *',
+    const [result] = await pool.query(
+      'INSERT INTO `group` (group_name) VALUES (?)',
       [group_name]
     );
-    
-    if (result.rows.length === 0) {
+    if (!result.insertId) {
       return res.status(500).json({ error: "Group creation failed" });
     }
-    
     res.status(201).json({
       message: "Group created successfully",
-      group: result.rows[0]
+      group: { group_id: result.insertId, group_name }
     });
   } catch (error) {
     console.error(error.message);
@@ -39,19 +37,19 @@ exports.addAdmin = async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const client = await pool.connect();
+  const connection = await pool.getConnection();
   try {
-    await client.query('BEGIN');
+    await connection.beginTransaction();
 
     // Create employee
     const empQuery = `
       INSERT INTO employee (
-        firstname, middlename, lastname, 
+        password, firstname, middlename, lastname, 
         email, gender, salary, aadhaar, education_qualification
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-      RETURNING id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const empValues = [
+      employeeData.password,
       employeeData.firstname,
       employeeData.middlename || null,
       employeeData.lastname,
@@ -61,43 +59,39 @@ exports.addAdmin = async (req, res) => {
       employeeData.aadhaar,
       employeeData.education_qualification
     ];
-    
-    const empResult = await client.query(empQuery, empValues);
-    if (empResult.rows.length === 0) {
+    const [empResult] = await connection.query(empQuery, empValues);
+    if (!empResult.insertId) {
       throw new Error("Employee creation failed");
     }
-    
-    const empId = empResult.rows[0].id;
+    const empId = empResult.insertId;
 
     // Create administrator
     const adminQuery = `
       INSERT INTO administrator (id, supervisor_id, group_id)
-      VALUES ($1, $2, $3)
-      RETURNING *
+      VALUES (?, ?, ?)
     `;
-    const adminResult = await client.query(adminQuery, [
+    const [adminResult] = await connection.query(adminQuery, [
       empId, 
       supervisor_id || null, 
       group_id
     ]);
-    
-    if (adminResult.rows.length === 0) {
+    if (!adminResult.affectedRows) {
       throw new Error("Administrator creation failed");
     }
 
-    await client.query('COMMIT');
+    await connection.commit();
     res.status(201).json({
       message: "Admin added successfully",
-      admin: adminResult.rows[0]
+      admin: { id: empId, supervisor_id, group_id }
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await connection.rollback();
     console.error(error.message);
     res.status(500).json({ 
       error: error.message || "Server error" 
     });
   } finally {
-    client.release();
+    connection.release();
   }
 };
 
@@ -115,19 +109,19 @@ exports.addScientist = async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const client = await pool.connect();
+  const connection = await pool.getConnection();
   try {
-    await client.query('BEGIN');
+    await connection.beginTransaction();
 
     // Create employee
     const empQuery = `
       INSERT INTO employee (
-        firstname, middlename, lastname, 
+        password, firstname, middlename, lastname, 
         email, gender, salary, aadhaar, education_qualification
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-      RETURNING id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const empValues = [
+      employeeData.password,
       employeeData.firstname,
       employeeData.middlename || null,
       employeeData.lastname,
@@ -137,45 +131,53 @@ exports.addScientist = async (req, res) => {
       employeeData.aadhaar,
       employeeData.education_qualification
     ];
-    
-    const empResult = await client.query(empQuery, empValues);
-    if (empResult.rows.length === 0) {
+    const [empResult] = await connection.query(empQuery, empValues);
+    if (!empResult.insertId) {
       throw new Error("Employee creation failed");
     }
-    
-    const empId = empResult.rows[0].id;
+    const empId = empResult.insertId;
 
     // Create scientist
     const sciQuery = `
       INSERT INTO scientist (emp_id, category, research_area, grade, group_id)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
+      VALUES (?, ?, ?, ?, ?)
     `;
-    const sciResult = await client.query(sciQuery, [
+    const [sciResult] = await connection.query(sciQuery, [
       empId, 
       category, 
       research_area || null, 
       grade, 
       group_id
     ]);
-    
-    if (sciResult.rows.length === 0) {
+    if (!sciResult.affectedRows) {
       throw new Error("Scientist creation failed");
     }
 
-    await client.query('COMMIT');
+    // Ensure the grade is managed by the group
+    const [gradeRows] = await connection.query(
+      `SELECT 1 FROM managed_scientist_grade WHERE group_id = ? AND scientist_grade = ?`,
+      [group_id, grade]
+    );
+    if (gradeRows.length === 0) {
+      await connection.query(
+        `INSERT INTO managed_scientist_grade (group_id, scientist_grade) VALUES (?, ?)`,
+        [group_id, grade]
+      );
+    }
+
+    await connection.commit();
     res.status(201).json({
       message: "Scientist added successfully",
-      scientist: sciResult.rows[0]
+      scientist: { emp_id: empId, category, research_area, grade, group_id }
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await connection.rollback();
     console.error(error.message);
     res.status(500).json({ 
       error: error.message || "Server error" 
     });
   } finally {
-    client.release();
+    connection.release();
   }
 };
 
@@ -187,21 +189,20 @@ exports.assignAdminToGroup = async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
+    const [result] = await pool.query(
       `UPDATE administrator 
-       SET group_id = $1 
-       WHERE id = $2 
-       RETURNING *`,
+       SET group_id = ? 
+       WHERE id = ?`,
       [group_id, admin_id]
     );
 
-    if (result.rowCount === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Admin not found or update failed" });
     }
 
     res.json({
       message: "Admin assigned to group successfully",
-      admin: result.rows[0]
+      admin: { id: admin_id, group_id }
     });
   } catch (error) {
     console.error(error.message);
@@ -213,37 +214,27 @@ exports.assignAdminToGroup = async (req, res) => {
 exports.getGroupHierarchy = async (req, res) => {
   try {
     // Get all groups
-    const groupsQuery = 'SELECT * FROM "group"';
-    const groupsResult = await pool.query(groupsQuery);
-    
-    if (groupsResult.rows.length === 0) {
+    const [groups] = await pool.query('SELECT * FROM `group`');
+    if (groups.length === 0) {
       return res.status(404).json({ error: "No groups found" });
     }
 
-    const groups = groupsResult.rows;
-    
     // Get administrators for each group
-    const adminsQuery = `
+    const [admins] = await pool.query(`
       SELECT a.id, a.group_id, e.firstname, e.lastname, a.supervisor_id
       FROM administrator a
       JOIN employee e ON a.id = e.id
-    `;
-    const adminsResult = await pool.query(adminsQuery);
-    const admins = adminsResult.rows;
-    
+    `);
+
     // Get scientists for each group
-    const scientistsQuery = `
+    const [scientists] = await pool.query(`
       SELECT s.emp_id, s.group_id, e.firstname, e.lastname, s.grade
       FROM scientist s
       JOIN employee e ON s.emp_id = e.id
-    `;
-    const scientistsResult = await pool.query(scientistsQuery);
-    const scientists = scientistsResult.rows;
-    
+    `);
+
     // Get managed grades for each group
-    const gradesQuery = 'SELECT * FROM managed_scientist_grade';
-    const gradesResult = await pool.query(gradesQuery);
-    const grades = gradesResult.rows;
+    const [grades] = await pool.query('SELECT * FROM managed_scientist_grade');
 
     // Build hierarchy structure
     const hierarchy = groups.map(group => ({
@@ -275,36 +266,36 @@ exports.changeGroupGrades = async (req, res) => {
     });
   }
 
-  const client = await pool.connect();
+  const connection = await pool.getConnection();
   try {
-    await client.query('BEGIN');
+    await connection.beginTransaction();
 
     // Remove existing grades
-    await client.query(
+    await connection.query(
       `DELETE FROM managed_scientist_grade 
-       WHERE group_id = $1`,
+       WHERE group_id = ?`,
       [group_id]
     );
 
     // Insert new grades
     for (const grade of grades) {
-      await client.query(
+      await connection.query(
         `INSERT INTO managed_scientist_grade (group_id, scientist_grade)
-         VALUES ($1, $2)`,
+         VALUES (?, ?)`,
         [group_id, grade]
       );
     }
 
-    await client.query('COMMIT');
+    await connection.commit();
     res.json({ 
       message: `Managed grades updated for group ${group_id}`,
       updated_grades: grades
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await connection.rollback();
     console.error(error.message);
     res.status(500).json({ error: "Server error" });
   } finally {
-    client.release();
+    connection.release();
   }
 };
