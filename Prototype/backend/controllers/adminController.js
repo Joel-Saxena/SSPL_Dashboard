@@ -3,11 +3,11 @@ const pool = require('../db_config/db_connection');
 
 // TODO: All logic that ensures 'Only allow update if scientist is in admin's group" will be based on JWT token later.
 
-// ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
+// ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists?group_id=)
 // Get all scientists in admin's group
 exports.getScientistsInGroup = async (req, res) => {
   try {
-    const groupId = req.body.group_id;
+    const groupId = req.query.group_id;
     const [scientists] = await pool.query(
       `SELECT s.emp_id, e.firstname, e.lastname, s.grade, s.category, s.research_area
        FROM scientist s JOIN employee e ON s.emp_id = e.id WHERE s.group_id = ?`,
@@ -118,7 +118,7 @@ exports.searchScientistByName = async (req, res) => {
 // Get complete scientist details
 exports.getCompleteScientistDetails = async (req, res) => {
   try {
-    const groupId = req.body.admin_group_id;
+    const groupId = req.query.admin_group_id;
     const sciId = req.params.id;
 
     // console.log(`Fetching details for scientist ID: ${sciId} in group ID: ${groupId}`);
