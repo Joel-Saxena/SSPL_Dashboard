@@ -18,9 +18,17 @@ exports.login = async (req, res) => {
     const [adminRows] = await pool.query('SELECT * FROM administrator WHERE id = ?', [emp_id]);
     const [sciRows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ?', [emp_id]);
     let role = null;
-    if (adminRows.length > 0) role = 'administrator';
-    else if (sciRows.length > 0) role = 'scientist';
-    res.json({ user: rows[0], role });
+    let group_id = null;
+    if (adminRows.length > 0) {
+      role = 'administrator';
+      group_id = adminRows[0].group_id;
+      if (group_id == null) {
+        return res.status(500).json({ message: 'Administrator group_id missing in database' });
+      }
+    } else if (sciRows.length > 0) {
+      role = 'scientist';
+    }
+    res.json({ user: rows[0], role, group_id });
   } catch (err) {
     res.status(500).json({ message: 'Error during login' });
   }
