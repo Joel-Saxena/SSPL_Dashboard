@@ -6,36 +6,53 @@ export default function ScientistProfile() {
   const [searchParams] = useSearchParams();
   const groupId = searchParams.get('group_id');
   const { id } = useParams();
-  console.log(`Fetching profile for scientist ID: ${id}, Admin Group ID: ${groupId}`);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState({});
   const [loading, setLoading] = useState(true);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [phones, setPhones] = useState([]);
+  const [landlines, setLandlines] = useState([]);
+
   const [formData, setFormData] = useState({
     firstname: '',
+    middlename: '',
     lastname: '',
     email: '',
     gender: '',
     salary: '',
     aadhaar: '',
+    pan_number: '',
+    pis_pin_number: '',
     education_qualification: '',
     category: '',
     research_area: '',
     grade: '',
-    group_id: ''
+    pay_level: '',
+    university: '',
+    subject: '',
+    date_of_birth: '',
+    date_of_joining: '',
+    date_of_retirement: '',
+    date_in_present_designation: '',
+    address1_permanent: '',
+    address2_temporary: ''
   });
+
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        console.log(`Fetching profile for scientist ID: ${id}, Admin Group ID: ${groupId}`);
-        const response = await axios.get(`http://localhost:5000/api/admin/scientist/${id}`, {
-          params: { admin_group_id: groupId }
-        });
-        setProfile(response.data.profile);
+        const response = await axios.get(
+          `http://localhost:5000/api/admin/scientist/${id}`,
+          { params: { admin_group_id: groupId } }
+        );
+        const { profile, phones, landlines } = response.data;
+        setProfile(profile);
+        setPhones(phones);         // <— here
+        setLandlines(landlines);   // <— and here
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,6 +61,7 @@ export default function ScientistProfile() {
     };
     fetchProfile();
   }, [id]);
+
 
   const handleDelete = async () => {
     try {
@@ -71,42 +89,55 @@ export default function ScientistProfile() {
     try {
       await axios.post('http://localhost:5000/api/admin/scientist', {
         ...formData,
-        admin_group_id: 2
+        admin_group_id: groupId
       });
       alert('Scientist added successfully!');
       setShowAddForm(false);
+      // reset all fields
       setFormData({
         firstname: '',
+        middlename: '',
         lastname: '',
         email: '',
         gender: '',
         salary: '',
         aadhaar: '',
+        pan_number: '',
+        pis_pin_number: '',
         education_qualification: '',
         category: '',
         research_area: '',
         grade: '',
-        group_id: ''
+        pay_level: '',
+        university: '',
+        subject: '',
+        date_of_birth: '',
+        date_of_joining: '',
+        date_of_retirement: '',
+        date_in_present_designation: '',
+        address1_permanent: '',
+        address2_temporary: ''
       });
-      navigate('/AdminDashboard');
+      navigate('/AdminDashboard?group_id=' + groupId);
     } catch (err) {
       console.error(err);
       alert('Failed to add scientist');
     }
   };
 
+
   // Layout: No vertical scroll, so we use a centered card and sidebar
   return (
     <div style={{
-        minHeight: '100vh',
-        width: '100vw',
-        backgroundColor: '#F4F6F9',
-        fontFamily: 'Segoe UI, sans-serif',
-        boxSizing: 'border-box',
-        padding: '0',
-        overflow: 'auto',
-        color: '#000',
-      }}>
+      minHeight: '100vh',
+      width: '100vw',
+      backgroundColor: '#F4F6F9',
+      fontFamily: 'Segoe UI, sans-serif',
+      boxSizing: 'border-box',
+      padding: '0',
+      overflow: 'auto',
+      color: '#000',
+    }}>
       {/* Header */}
       <header style={{
         background: '#003366',
@@ -124,15 +155,15 @@ export default function ScientistProfile() {
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '0', 
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '0',
           position: 'fixed', top: 10, left: 10, zIndex: 1000,
           background: '#003366', color: '#fff', border: 'none', borderRadius: '50%', width: 48, height: 48, fontSize: 24, cursor: 'pointer'
         }}
         aria-label="Open sidebar"
-         >☰</button>
+      >☰</button>
 
       {/* Sidebar */}
       {sidebarOpen && (
@@ -149,7 +180,7 @@ export default function ScientistProfile() {
           <div style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 32 }}>{profile?.firstname} {profile?.lastname}</div>
           <button style={sidebarBtn} onClick={handleUpdate}>UPDATE</button>
           <button style={sidebarBtn} onClick={handleAddScientist}>ADD SCIENTIST</button>
-          <button style={sidebarBtn} onClick={() => navigate('/AdminDashboard')}>SEARCH</button>
+          <button style={sidebarBtn} onClick={() => navigate('/AdminDashboard?group_id=' + groupId)}>SEARCH</button>
           <button style={{ ...sidebarBtn, background: '#c00', color: '#fff' }} onClick={handleDelete}>DELETE SCIENTIST</button>
           <button style={{ ...sidebarBtn, marginTop: 'auto', marginBottom: 20 }} onClick={() => setSidebarOpen(false)}>Close</button>
         </div>
@@ -181,7 +212,6 @@ export default function ScientistProfile() {
         }}>
           {loading ? (
             <div>Loading...</div>
-          
           ) : (
             <>
               <img
@@ -192,28 +222,54 @@ export default function ScientistProfile() {
               <div style={{ fontWeight: 'bold', fontSize: 24, marginBottom: 24 }}>
                 {profile.firstname} {profile.lastname}
               </div>
+
               {/* Personal Details */}
               <SectionHeader>Personal Details</SectionHeader>
               <DetailsTable>
-                <ProfileRow label="Name" value={`${profile.firstname || ''} ${profile.lastname || ''}`} />
+                <ProfileRow label="Name" value={`${profile.firstname} ${profile.lastname}`} />
                 <ProfileRow label="Email" value={profile.email} />
                 <ProfileRow label="Gender" value={profile.gender} />
                 <ProfileRow label="Aadhaar" value={profile.aadhaar} />
+                <ProfileRow label="PAN" value={profile.pan_number} />
+                <ProfileRow label="PIS/PIN" value={profile.pis_pin_number} />
+                <ProfileRow label="Date of Birth" value={profile.date_of_birth} />
               </DetailsTable>
+
+              {/* Contact Numbers */}
+              <SectionHeader>Contact Numbers</SectionHeader>
+              <DetailsTable>
+                <ProfileRow label="Phone Numbers" value={phones.map(p => p.phone_no).join(', ')} />
+                <ProfileRow label="Landlines" value={landlines.map(l => l.landline_no).join(', ')} />
+              </DetailsTable>
+
               {/* Job Details */}
               <SectionHeader>Job Details</SectionHeader>
               <DetailsTable>
                 <ProfileRow label="Category" value={profile.category} />
                 <ProfileRow label="Research Area" value={profile.research_area} />
                 <ProfileRow label="Grade" value={profile.grade} />
+                <ProfileRow label="Pay Level" value={profile.pay_level} />
                 <ProfileRow label="Group ID" value={profile.group_id} />
-                <ProfileRow label="Salary" value={profile.salary} />
+                <ProfileRow label="Date Joined" value={profile.date_of_joining} />
+                <ProfileRow label="Present Since" value={profile.date_in_present_designation} />
+                <ProfileRow label="Retirement Date" value={profile.date_of_retirement} />
               </DetailsTable>
-              {/* Education */}
-              <SectionHeader>Education</SectionHeader>
+
+              {/* Education & Qualification */}
+              <SectionHeader>Education & Qualification</SectionHeader>
               <DetailsTable>
-                <ProfileRow label="Education Qualification" value={profile.education_qualification} />
+                <ProfileRow label="Qualification" value={profile.education_qualification} />
+                <ProfileRow label="University" value={profile.university} />
+                <ProfileRow label="Subject" value={profile.subject} />
               </DetailsTable>
+
+              {/* Addresses */}
+              <SectionHeader>Addresses</SectionHeader>
+              <DetailsTable>
+                <ProfileRow label="Permanent Address" value={profile.address1_permanent} />
+                <ProfileRow label="Temporary Address" value={profile.address2_temporary} />
+              </DetailsTable>
+
               {/* Work History */}
               {Array.isArray(profile.history) && profile.history.length > 0 && (
                 <>
@@ -245,6 +301,7 @@ export default function ScientistProfile() {
         </main>
       </div>
 
+
       {/* Update Scientist Modal */}
       {showUpdateForm && (
         <UpdateScientistForm
@@ -253,6 +310,7 @@ export default function ScientistProfile() {
           onUpdated={handleUpdated}
         />
       )}
+
 
       {/* Add Scientist Modal */}
       {showAddForm && (
@@ -263,6 +321,7 @@ export default function ScientistProfile() {
           onChange={handleFormChange}
         />
       )}
+
 
       {/* Footer */}
       <footer style={{
@@ -362,16 +421,28 @@ function ProfileRow({ label, value, isEditMode = false, onChange, name }) {
 function UpdateScientistForm({ profile, onClose, onUpdated }) {
   const [form, setForm] = useState({
     firstname: profile.firstname || '',
+    middlename: profile.middlename || '',
     lastname: profile.lastname || '',
     email: profile.email || '',
     gender: profile.gender || '',
     salary: profile.salary || '',
     aadhaar: profile.aadhaar || '',
+    pan_number: profile.pan_number || '',
+    pis_pin_number: profile.pis_pin_number || '',
     education_qualification: profile.education_qualification || '',
     category: profile.category || '',
     research_area: profile.research_area || '',
     grade: profile.grade || '',
-    admin_group_id: profile.group_id || '2',
+    pay_level: profile.pay_level || '',
+    university: profile.university || '',
+    subject: profile.subject || '',
+    date_of_birth: profile.date_of_birth || '',
+    date_of_joining: profile.date_of_joining || '',
+    date_of_retirement: profile.date_of_retirement || '',
+    date_in_present_designation: profile.date_in_present_designation || '',
+    address1_permanent: profile.address1_permanent || '',
+    address2_temporary: profile.address2_temporary || '',
+    admin_group_id: profile.group_id || ''
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -448,27 +519,52 @@ function AddScientistForm({ formData, onClose, onSubmit, onChange }) {
       }}>
         <h2 style={{ color: '#003366', marginBottom: 16 }}>Add New Scientist</h2>
         <form onSubmit={onSubmit}>
-          {/* Personal Details */}
+          {/* Personal */}
           <SectionHeader>Personal Details</SectionHeader>
           <DetailsTable>
-            <ProfileRow label="First Name" value={formData.firstname} isEditMode={true} onChange={onChange} name="firstname" />
-            <ProfileRow label="Last Name" value={formData.lastname} isEditMode={true} onChange={onChange} name="lastname" />
-            <ProfileRow label="Email" value={formData.email} isEditMode={true} onChange={onChange} name="email" />
-            <ProfileRow label="Gender" value={formData.gender} isEditMode={true} onChange={onChange} name="gender" />
-            <ProfileRow label="Aadhaar" value={formData.aadhaar} isEditMode={true} onChange={onChange} name="aadhaar" />
+            <ProfileRow label="First Name" value={formData.firstname} isEditMode name="firstname" onChange={onChange} />
+            <ProfileRow label="Middle Name" value={formData.middlename} isEditMode name="middlename" onChange={onChange} />
+            <ProfileRow label="Last Name" value={formData.lastname} isEditMode name="lastname" onChange={onChange} />
+            <ProfileRow label="Email" value={formData.email} isEditMode name="email" onChange={onChange} />
+            <ProfileRow label="Gender" value={formData.gender} isEditMode name="gender" onChange={onChange} />
+            <ProfileRow label="Aadhaar" value={formData.aadhaar} isEditMode name="aadhaar" onChange={onChange} />
+            <ProfileRow label="PAN" value={formData.pan_number} isEditMode name="pan_number" onChange={onChange} />
+            <ProfileRow label="PIS/PIN" value={formData.pis_pin_number} isEditMode name="pis_pin_number" onChange={onChange} />
+            <ProfileRow label="DOB" value={formData.date_of_birth} isEditMode name="date_of_birth" onChange={onChange} />
           </DetailsTable>
-          {/* Job Details */}
+
+          {/* Contact */}
+          <SectionHeader>Contact Numbers</SectionHeader>
+          <DetailsTable>
+            <ProfileRow label="Phone Numbers" value={formData.phone_no || ''} isEditMode name="phone_no" onChange={onChange} />
+            <ProfileRow label="Landlines" value={formData.landline_no || ''} isEditMode name="landline_no" onChange={onChange} />
+          </DetailsTable>
+
+          {/* Job */}
           <SectionHeader>Job Details</SectionHeader>
           <DetailsTable>
-            <ProfileRow label="Category" value={formData.category} isEditMode={true} onChange={onChange} name="category" />
-            <ProfileRow label="Research Area" value={formData.research_area} isEditMode={true} onChange={onChange} name="research_area" />
-            <ProfileRow label="Grade" value={formData.grade} isEditMode={true} onChange={onChange} name="grade" />
-            <ProfileRow label="Salary" value={formData.salary} isEditMode={true} onChange={onChange} name="salary" />
+            <ProfileRow label="Category" value={formData.category} isEditMode name="category" onChange={onChange} />
+            <ProfileRow label="Research Area" value={formData.research_area} isEditMode name="research_area" onChange={onChange} />
+            <ProfileRow label="Grade" value={formData.grade} isEditMode name="grade" onChange={onChange} />
+            <ProfileRow label="Pay Level" value={formData.pay_level} isEditMode name="pay_level" onChange={onChange} />
           </DetailsTable>
+
           {/* Education */}
           <SectionHeader>Education</SectionHeader>
           <DetailsTable>
-            <ProfileRow label="Education Qualification" value={formData.education_qualification} isEditMode={true} onChange={onChange} name="education_qualification" />
+            <ProfileRow label="Qualification" value={formData.education_qualification} isEditMode name="education_qualification" onChange={onChange} />
+            <ProfileRow label="University" value={formData.university} isEditMode name="university" onChange={onChange} />
+            <ProfileRow label="Subject" value={formData.subject} isEditMode name="subject" onChange={onChange} />
+          </DetailsTable>
+
+          {/* Dates & Addresses */}
+          <SectionHeader>Dates & Addresses</SectionHeader>
+          <DetailsTable>
+            <ProfileRow label="Date Joined" value={formData.date_of_joining} isEditMode name="date_of_joining" onChange={onChange} />
+            <ProfileRow label="Since Designation" value={formData.date_in_present_designation} isEditMode name="date_in_present_designation" onChange={onChange} />
+            <ProfileRow label="Retirement" value={formData.date_of_retirement} isEditMode name="date_of_retirement" onChange={onChange} />
+            <ProfileRow label="Permanent Addr" value={formData.address1_permanent} isEditMode name="address1_permanent" onChange={onChange} />
+            <ProfileRow label="Temporary Addr" value={formData.address2_temporary} isEditMode name="address2_temporary" onChange={onChange} />
           </DetailsTable>
           <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between' }}>
             <button type="submit" style={btnStyle}>Add Scientist</button>
@@ -479,6 +575,7 @@ function AddScientistForm({ formData, onClose, onSubmit, onChange }) {
     </div>
   );
 }
+
 
 const btnStyle = {
   background: '#003366', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', cursor: 'pointer'

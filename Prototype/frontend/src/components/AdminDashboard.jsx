@@ -17,7 +17,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const response = await axios.get('http://localhost:5000/api/admin/scientists', {
-        params: { group_id: groupId },
+        params: { group_id: groupId }
       });
       setScientists(response.data);
       setError(null);
@@ -37,12 +37,16 @@ export default function AdminDashboard() {
 
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/search', {
-        params: {
-          name: searchTerm,
-          admin_group_id: groupId,
-        },
-      });
+      console.log(`Searching scientists with term: ${searchTerm} for group ID: ${groupId}`);
+      const response = await axios.get(
+        'http://localhost:5000/api/admin/search',
+        {
+          params: {
+        admin_group_id: groupId,
+        ScientistName: searchTerm
+          }
+        }
+      );
       setScientists(response.data);
       setError(null);
     } catch (err) {
@@ -64,16 +68,16 @@ export default function AdminDashboard() {
   return (
     <div
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#F4F6F9',
-        fontFamily: 'Segoe UI, sans-serif',
-        boxSizing: 'border-box',
-        padding: '40px',
-        overflow: 'auto'
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: '#F4F6F9',
+      fontFamily: 'Segoe UI, sans-serif',
+      boxSizing: 'border-box',
+      padding: '40px',
+      overflow: 'auto'
       }}
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -142,10 +146,11 @@ export default function AdminDashboard() {
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px'
           }}>
-            <div style={{ width: '100px' }}>ID</div>
+            <div style={{ width: '80px' }}>ID</div>
             <div style={{ flex: 1 }}>Name</div>
             <div style={{ width: '100px', textAlign: 'center' }}>Grade</div>
-            <div style={{ width: '160px', textAlign: 'center' }}>Category</div>
+            <div style={{ width: '140px', textAlign: 'center' }}>Category</div>
+            <div style={{ width: '120px', textAlign: 'center' }}>Pay Level</div>
             <div style={{ flex: 1, textAlign: 'right' }}>Research Area</div>
           </div>
 
@@ -165,7 +170,7 @@ export default function AdminDashboard() {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6F0FF'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'}
             >
-              <div style={{ width: '100px', color: '#1A202C' }}>
+              <div style={{ width: '80px', color: '#1A202C' }}>
                 {sci.emp_id}
               </div>
               <div style={{ flex: 1, fontWeight: '500', color: '#1A202C' }}>
@@ -174,8 +179,11 @@ export default function AdminDashboard() {
               <div style={{ width: '100px', textAlign: 'center', color: '#4A5568' }}>
                 {sci.grade}
               </div>
-              <div style={{ width: '160px', textAlign: 'center', color: '#4A5568' }}>
+              <div style={{ width: '140px', textAlign: 'center', color: '#4A5568' }}>
                 {sci.category}
+              </div>
+              <div style={{ width: '120px', textAlign: 'center', color: '#4A5568' }}>
+                {sci.pay_level}
               </div>
               <div style={{ flex: 1, textAlign: 'right', color: '#4A5568' }}>
                 {sci.research_area}

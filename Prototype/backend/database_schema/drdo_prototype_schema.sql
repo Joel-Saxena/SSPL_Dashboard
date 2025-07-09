@@ -8,15 +8,36 @@ CREATE TABLE employee (
     lastname VARCHAR(50),
     email VARCHAR(100),
     gender CHAR(1),
-    salary DECIMAL(12,2),
+    cadre VARCHAR(50),
+    pay_level VARCHAR(50),
+    category VARCHAR(3),
+    education_qualification VARCHAR(100),
+    university VARCHAR(100),
+    subject VARCHAR(100),
+    date_of_birth DATE,
     aadhaar VARCHAR(12) UNIQUE,
-    education_qualification VARCHAR(100)
+    pan_number VARCHAR(10) UNIQUE,
+    pis_pin_number VARCHAR(20) UNIQUE,
+    date_of_joining DATE,
+    date_of_retirement DATE,
+    date_in_present_designation DATE,
+    address1_permanent VARCHAR(255),
+    address2_temporary VARCHAR(255)
 );
 
 CREATE TABLE phone_number (
     emp_id INT,
     phone_no VARCHAR(15),
     PRIMARY KEY (emp_id, phone_no),
+    FOREIGN KEY (emp_id) REFERENCES employee(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE landline_number (
+    emp_id INT,
+    landline_no VARCHAR(15),
+    PRIMARY KEY (emp_id, landline_no),
     FOREIGN KEY (emp_id) REFERENCES employee(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -31,6 +52,7 @@ CREATE TABLE administrator (
     id INT PRIMARY KEY,
     supervisor_id INT NOT NULL,
     group_id INT,
+    designation VARCHAR(100),
     FOREIGN KEY (id) REFERENCES employee(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
@@ -61,6 +83,22 @@ CREATE TABLE managed_scientist_grade (
     scientist_grade CHAR(1),
     PRIMARY KEY (group_id, scientist_grade),
     FOREIGN KEY (group_id) REFERENCES `group`(group_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE DRTC_employee (
+    emp_id INT PRIMARY KEY,
+    designation VARCHAR(100),
+    FOREIGN KEY (emp_id) REFERENCES employee(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE allied_employee (
+    emp_id INT PRIMARY KEY,
+    designation VARCHAR(100),
+    FOREIGN KEY (emp_id) REFERENCES employee(id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );

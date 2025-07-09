@@ -44,9 +44,28 @@ exports.addAdmin = async (req, res) => {
     // Create employee
     const empQuery = `
       INSERT INTO employee (
-        password, firstname, middlename, lastname, 
-        email, gender, salary, aadhaar, education_qualification
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        password,
+        firstname,
+        middlename,
+        lastname,
+        email,
+        gender,
+        cadre,
+        pay_level,
+        category,
+        education_qualification,
+        university,
+        subject,
+        date_of_birth,
+        aadhaar,
+        pan_number,
+        pis_pin_number,
+        date_of_joining,
+        date_of_retirement,
+        date_in_present_designation,
+        address1_permanent,
+        address2_temporary
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
     const empValues = [
       employeeData.password,
@@ -55,9 +74,21 @@ exports.addAdmin = async (req, res) => {
       employeeData.lastname,
       employeeData.email,
       employeeData.gender,
-      employeeData.salary,
+      employeeData.cadre || null,
+      employeeData.pay_level || null,
+      employeeData.category || null,
+      employeeData.education_qualification,
+      employeeData.university || null,
+      employeeData.subject || null,
+      employeeData.date_of_birth || null,
       employeeData.aadhaar,
-      employeeData.education_qualification
+      employeeData.pan_number || null,
+      employeeData.pis_pin_number || null,
+      employeeData.date_of_joining || null,
+      employeeData.date_of_retirement || null,
+      employeeData.date_in_present_designation || null,
+      employeeData.address1_permanent || null,
+      employeeData.address2_temporary || null
     ];
     const [empResult] = await connection.query(empQuery, empValues);
     if (!empResult.insertId) {
@@ -71,8 +102,8 @@ exports.addAdmin = async (req, res) => {
       VALUES (?, ?, ?)
     `;
     const [adminResult] = await connection.query(adminQuery, [
-      empId, 
-      supervisor_id || null, 
+      empId,
+      supervisor_id || null,
       group_id
     ]);
     if (!adminResult.affectedRows) {
@@ -98,11 +129,11 @@ exports.addAdmin = async (req, res) => {
 // ROUTE 3: Add new scientist (POST /api/supervisor/scientist)
 exports.addScientist = async (req, res) => {
   const { 
-    employeeData, 
-    category, 
-    research_area, 
-    grade, 
-    group_id 
+    employeeData,
+    category,
+    research_area,
+    grade,
+    group_id
   } = req.body;
 
   if (!employeeData || !category || !grade || !group_id) {
@@ -116,9 +147,28 @@ exports.addScientist = async (req, res) => {
     // Create employee
     const empQuery = `
       INSERT INTO employee (
-        password, firstname, middlename, lastname, 
-        email, gender, salary, aadhaar, education_qualification
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        password,
+        firstname,
+        middlename,
+        lastname,
+        email,
+        gender,
+        cadre,
+        pay_level,
+        category,
+        education_qualification,
+        university,
+        subject,
+        date_of_birth,
+        aadhaar,
+        pan_number,
+        pis_pin_number,
+        date_of_joining,
+        date_of_retirement,
+        date_in_present_designation,
+        address1_permanent,
+        address2_temporary
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
     const empValues = [
       employeeData.password,
@@ -127,9 +177,21 @@ exports.addScientist = async (req, res) => {
       employeeData.lastname,
       employeeData.email,
       employeeData.gender,
-      employeeData.salary,
+      employeeData.cadre || null,
+      employeeData.pay_level || null,
+      employeeData.category || null,
+      employeeData.education_qualification,
+      employeeData.university || null,
+      employeeData.subject || null,
+      employeeData.date_of_birth || null,
       employeeData.aadhaar,
-      employeeData.education_qualification
+      employeeData.pan_number || null,
+      employeeData.pis_pin_number || null,
+      employeeData.date_of_joining || null,
+      employeeData.date_of_retirement || null,
+      employeeData.date_in_present_designation || null,
+      employeeData.address1_permanent || null,
+      employeeData.address2_temporary || null
     ];
     const [empResult] = await connection.query(empQuery, empValues);
     if (!empResult.insertId) {
@@ -143,10 +205,10 @@ exports.addScientist = async (req, res) => {
       VALUES (?, ?, ?, ?, ?)
     `;
     const [sciResult] = await connection.query(sciQuery, [
-      empId, 
-      category, 
-      research_area || null, 
-      grade, 
+      empId,
+      category,
+      research_area || null,
+      grade,
       group_id
     ]);
     if (!sciResult.affectedRows) {
@@ -255,4 +317,3 @@ exports.getGroupHierarchy = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
