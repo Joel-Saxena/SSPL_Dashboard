@@ -34,7 +34,6 @@ exports.updateScientistDetails = async (req, res) => {
       middlename,
       lastname,
       gender,
-      salary,
       aadhaar,
       education_qualification,
       category,
@@ -55,7 +54,7 @@ exports.updateScientistDetails = async (req, res) => {
 
     // update employee fields
     if (
-      firstname || middlename || lastname || gender || salary || aadhaar || education_qualification ||
+      firstname || middlename || lastname || gender || aadhaar || education_qualification ||
       pay_level || university || subject || date_of_birth || date_of_joining || date_of_retirement ||
       date_in_present_designation || address1_permanent || address2_temporary
     ) {
@@ -65,7 +64,6 @@ exports.updateScientistDetails = async (req, res) => {
            middlename = COALESCE(?, middlename),
            lastname = COALESCE(?, lastname),
            gender = COALESCE(?, gender),
-           salary = COALESCE(?, salary),
            aadhaar = COALESCE(?, aadhaar),
            education_qualification = COALESCE(?, education_qualification),
            pay_level = COALESCE(?, pay_level),
@@ -83,7 +81,6 @@ exports.updateScientistDetails = async (req, res) => {
           middlename,
           lastname,
           gender,
-          salary,
           aadhaar,
           education_qualification,
           pay_level,
@@ -177,7 +174,6 @@ exports.getCompleteScientistDetails = async (req, res) => {
   try {
     const groupId = req.query.admin_group_id;
     const sciId = req.params.id;
-
 
     // Only allow if scientist is in admin's group
     const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
