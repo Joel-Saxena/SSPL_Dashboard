@@ -154,14 +154,14 @@ exports.updateScientistDetails = async (req, res) => {
 exports.searchScientistByName = async (req, res) => {
   try {
     // Use admin_group_id from request body to ensure search is within admin's group
-    const groupId = req.body.admin_group_id;
-    const { name } = req.query;
-    if (!name) return res.status(400).json({ message: 'Name is required' });
+    const { admin_group_id } = req.query;
+    const { ScientistName } = req.query;
+    if (!ScientistName) return res.status(400).json({ message: 'Name is required' });
     const [scientists] = await pool.query(
       `SELECT s.emp_id, e.firstname, e.lastname, s.grade, s.category, s.research_area
        FROM scientist s JOIN employee e ON s.emp_id = e.id
        WHERE s.group_id = ? AND (e.firstname LIKE ? OR e.lastname LIKE ?)`,
-      [groupId, `%${name}%`, `%${name}%`]
+      [admin_group_id, `%${ScientistName}%`, `%${ScientistName}%`]
     );
     res.json(scientists);
   } catch (err) {

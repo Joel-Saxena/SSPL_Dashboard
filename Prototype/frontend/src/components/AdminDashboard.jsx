@@ -37,12 +37,16 @@ export default function AdminDashboard() {
 
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/search', {
-        params: {
-          name: searchTerm,
-          admin_group_id: groupId,
-        },
-      });
+      console.log(`Searching scientists with term: ${searchTerm} for group ID: ${groupId}`);
+      const response = await axios.get(
+        'http://localhost:5000/api/admin/search',
+        {
+          params: {
+        admin_group_id: groupId,
+        ScientistName: searchTerm
+          }
+        }
+      );
       setScientists(response.data);
       setError(null);
     } catch (err) {

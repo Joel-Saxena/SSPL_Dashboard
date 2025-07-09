@@ -6,7 +6,6 @@ export default function ScientistProfile() {
   const [searchParams] = useSearchParams();
   const groupId = searchParams.get('group_id');
   const { id } = useParams();
-  console.log(`Fetching profile for scientist ID: ${id}, Admin Group ID: ${groupId}`);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState({});
@@ -119,7 +118,7 @@ export default function ScientistProfile() {
         address1_permanent: '',
         address2_temporary: ''
       });
-      navigate('/AdminDashboard');
+      navigate('/AdminDashboard?group_id=' + groupId);
     } catch (err) {
       console.error(err);
       alert('Failed to add scientist');
@@ -181,7 +180,7 @@ export default function ScientistProfile() {
           <div style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 32 }}>{profile?.firstname} {profile?.lastname}</div>
           <button style={sidebarBtn} onClick={handleUpdate}>UPDATE</button>
           <button style={sidebarBtn} onClick={handleAddScientist}>ADD SCIENTIST</button>
-          <button style={sidebarBtn} onClick={() => navigate('/AdminDashboard')}>SEARCH</button>
+          <button style={sidebarBtn} onClick={() => navigate('/AdminDashboard?group_id=' + groupId)}>SEARCH</button>
           <button style={{ ...sidebarBtn, background: '#c00', color: '#fff' }} onClick={handleDelete}>DELETE SCIENTIST</button>
           <button style={{ ...sidebarBtn, marginTop: 'auto', marginBottom: 20 }} onClick={() => setSidebarOpen(false)}>Close</button>
         </div>
