@@ -1,0 +1,120 @@
+# 1) NAME
+#     • FIRST NAME
+#     • MIDDLE NAME
+#     • LAST NAME
+
+# 2) DESIGNATION
+
+#     DRDS
+#     a) SCIENTIST 'H'
+#     b) SCIENTIST 'G'
+#     c) SCIENTIST 'F'
+#     d) SCIENTIST 'E'
+#     e) SCIENTIST 'D'
+#     f) SCIENTIST 'C'
+#     g) SCIENTIST 'B'
+
+#     DRTC
+#     h) TECHNICAL OFFICER 'D'
+#     i) TECHNICAL OFFICER 'C'
+#     j) TECHNICAL OFFICER 'B'
+#     k) TECHNICAL OFFICER 'A'
+#     l) TECHNICAL OFFICER
+#     m) TECHNICAL ASSISTANT 'B'
+#     n) TECHNICIAN 'C'
+#     o) TECHNICIAN 'B'
+#     p) TECHNICIAN 'A'
+
+#     ADMIN
+#     q) CHIEF ADMINISTRATIVE OFFICER
+#     r) SR. ADMINISTRATIVE OFFICER-I
+#     s) SR. ADMINISTRATIVE OFFICER-II
+#     t) ADMINISTRATIVE OFFICER
+#     u) SR. ADMIN. ASSISTANT
+#     v) ADMIN. ASSISTANT 'B'
+#     w) ADMIN. ASSISTANT 'A'
+
+#     ALLIED
+#     x) SR. ACCOUNT OFFICER-I
+#     y) SR. ACCOUNT OFFICER-II
+#     z) SR. STORE OFFICER-I
+#     aa) SR. STORE ASSISTANT
+#     bb) STORE ASSISTANT 'B'
+#     cc) STORE ASSISTANT 'A'
+#     dd) MTS
+#     ee) ALS-I
+#     ff) ALS-II
+#     gg) SENIOR SECURITY ASSISTANT
+#     hh) SECURITY ASSISTANT 'B'
+#     ii) SECURITY ASSISTANT 'A'
+#     jj) STORE CUM MANAGER
+#     kk) ASSISTANT HALWAI-CUM-COOK
+
+# 3) PAY LEVEL
+
+# 4) GENDER
+#     a) MALE
+#     b) FEMALE
+
+# 5) CATEGORY
+#     a) GEN
+#     b) OBC
+#     c) SC
+#     d) ST
+
+# 6) QUALIFICATION
+#     a) Ph.D
+#     b) M.TECH
+#     c) B.TECH
+#     d) M.SC.
+#     e) B.SC.
+#     f) ITI
+#     g) BA
+#     h) B.COM
+
+# 7) UNIVERSITY
+
+# 8) SUBJECT
+#     • PHYSICS
+#     • CHEMISTRY
+#     • BIOLOGY
+#     • ...
+
+# 9) DATE OF BIRTH
+
+# 10) AADHAR NUMBER
+
+# 11) PAN NUMBER
+
+# 12) PIS/PIN NUMBER
+
+# 15) DATE OF JOINING
+
+# 16) DATE OF RETIREMENT
+
+# 17) DATE IN PRESENT DESIGNATION
+
+# 18) ADDRESS 1 (Permanent Address)
+
+# 19) ADDRESS 2 (Temporary Address)
+
+# 14) MOBILE NUMBER
+
+# 13) LANDLINE NUMBER
+
+14) Documents
+      a) AADHAR CARD
+      b) PAN CARD
+      c) promotion letter
+      d) transfer order
+      e) highest degree certificate ()
+
+15) Scientist Photograph
+
+16) Family details
+      a) Spouse Name
+      b) Children's Name
+
+      Parents 
+        a) Father's Name
+        b) Mother's Name
