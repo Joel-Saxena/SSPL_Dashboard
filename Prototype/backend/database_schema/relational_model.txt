@@ -1,0 +1,42 @@
+employee(id, password, firstname, middlename, lastname, email, gender, cadre, pay_level, category, education_qualification, university, subject, date_of_birth, aadhaar, pan_number, pis_pin_number, date_of_joining, date_of_retirement, date_in_present_designation, address1_permanent, address2_temporary)
+    - Primary Key: id
+    - Unique: aadhaar, pan_number, pis_pin_number
+    - password: Required
+
+phone_number(emp_id, phone_no)
+    - Primary Key: (emp_id, phone_no)
+    - Foreign Key: emp_id → employee(id)
+
+landline_number(emp_id, landline_no)
+    - Primary Key: (emp_id, landline_no)
+    - Foreign Key: emp_id → employee(id)
+
+group(group_id, group_name)
+    - Primary Key: group_id
+
+administrator(id, supervisor_id, group_id, designation)
+    - Primary Key: id
+    - Foreign Key: id → employee(id)
+    - Foreign Key: supervisor_id → administrator(id)
+    - Foreign Key: group_id → group(group_id)
+
+scientist(emp_id, category, research_area, grade, group_id)
+    - Primary Key: emp_id
+    - Foreign Key: emp_id → employee(id)
+    - Foreign Key: group_id → group(group_id)
+
+managed_scientist_grade(group_id, scientist_grade)
+    - Primary Key: (group_id, scientist_grade)
+    - Foreign Key: group_id → group(group_id)
+
+DRTC_employee(emp_id, designation)
+    - Primary Key: emp_id
+    - Foreign Key: emp_id → employee(id)
+
+allied_employee(emp_id, designation)
+    - Primary Key: emp_id
+    - Foreign Key: emp_id → employee(id)
+
+history(sci_id, other_fields_TBD)
+    - Primary Key: sci_id
+    - Foreign Key: sci_id → scientist(emp_id)
