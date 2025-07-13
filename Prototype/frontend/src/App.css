@@ -41,3 +41,21 @@
 .read-the-docs {
   color: #888;
 }
+
+.input-date-wrapper input.input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+.input-date-wrapper .calendar-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.input { color: #000 !important; }
+.input::placeholder { color: #000 !important; opacity: 1; }

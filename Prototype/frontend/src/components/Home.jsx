@@ -34,9 +34,9 @@ const Home = () => {
         if (data.role === "administrator") {
           navigate(`/AdminDashboard?group_id=${data.group_id}`);
         } else if (data.role === "scientist") {
-          // Scientist is not supposed to login.
-          // navigate(`/scientist/${data.user.id}?group_id=${data.group_id}`);
-          alert("A Scientist is not authorized.");
+          // Allow scientists to access their profile
+          localStorage.setItem("group_id", data.group_id || "");
+          navigate("/profile");
         } else {
           alert("Unknown role. Please contact admin.");
         }
