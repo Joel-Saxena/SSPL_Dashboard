@@ -11,43 +11,45 @@ const Home = () => {
   };
 
   const handleLoginSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          emp_id: login.employeeId,
-          password: login.password,
-        }),
-      });
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        emp_id: login.employeeId,
+        password: login.password,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("role", data.role);
-        console.log("Admin Group ID:", data.group_id);
-        if (data.role === "administrator") {
-          navigate(`/AdminDashboard?group_id=${data.group_id}`);
-        } else if (data.role === "scientist") {
-          // Allow scientists to access their profile
-          localStorage.setItem("group_id", data.group_id || "");
-          navigate("/profile");
-        } else {
-          alert("Unknown role. Please contact admin.");
-        }
+    if (response.ok) {
+      // Save token and user info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("emp_id", data.emp_id);
+      if (data.group_id) localStorage.setItem("group_id", data.group_id);
+
+      // Redirect based on role
+      if (data.role === "admin") {
+        navigate("/AdminDashboard");
+      } else if (data.role === "super_admin") {
+        navigate("/SupervisorDashboard");
       } else {
-        alert(data.message || "Invalid credentials");
+        alert("Unauthorized role. Access denied.");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Server error. Please try again later.");
+    } else {
+      alert(data.message || "Invalid credentials");
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Server error. Please try again later.");
+  }
+};
 
   return (
     <div

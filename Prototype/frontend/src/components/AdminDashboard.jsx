@@ -2,22 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
-  const [searchParams] = useSearchParams();
-  const groupId = searchParams.get('group_id');
   const [scientists, setScientists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
+  const [authorized, setAuthorized] = useState(false);
+
   const navigate = useNavigate();
 
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const groupId = localStorage.getItem('group_id');
+
+  // ✅ First, check authorization (no early return)
+  useEffect(() => {
+    if (!token || role !== 'admin') {
+      alert('Unauthorized. Please login as Admin.');
+      navigate('/');
+    } else {
+      setAuthorized(true);
+    }
+  }, [navigate, token, role]);
+
+  // ✅ Fetch scientists only if authorized
   useEffect(() => {
     const fetchScientists = async () => {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:5000/api/admin/scientists', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
           params: { group_id: groupId }
         });
         setScientists(response.data);
@@ -29,27 +47,30 @@ export default function AdminDashboard() {
         setLoading(false);
       }
     };
-    fetchScientists();
-  }, [groupId]);
 
-  const handleSearch = async () => {
-    if (searchTerm.trim() === '') {
-      // fetchScientists(); // This line is removed as fetchScientists is now inside useEffect
-      return;
+    if (authorized) {
+      fetchScientists();
     }
+  }, [authorized, token, groupId]);
+
+  // 🧤 Block rendering until authorization is confirmed
+  if (!authorized) return null;
+
+  // 🔍 Handle scientist search
+  const handleSearch = async () => {
+    if (searchTerm.trim() === '') return;
 
     try {
       setLoading(true);
-      console.log(`Searching scientists with term: ${searchTerm} for group ID: ${groupId}`);
-      const response = await axios.get(
-        'http://localhost:5000/api/admin/search',
-        {
-          params: {
-        admin_group_id: groupId,
-        ScientistName: searchTerm
-          }
+      const response = await axios.get('http://localhost:5000/api/admin/search', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        params: {
+          ScientistName: searchTerm,
+          admin_group_id: groupId
         }
-      );
+      });
       setScientists(response.data);
       setError(null);
     } catch (err) {
@@ -60,33 +81,56 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRowClick = (id) => {
-    navigate(`/profile?emp_id=${id}&group_id=${groupId}`);
-  };
+const handleRowClick = (id) => {
+  const group_id = localStorage.getItem('group_id'); // ← get from storage
+  navigate(`/profile?emp_id=${id}&group_id=${group_id}`);
+};
+
 
   return (
     <div
       style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: '#F4F6F9',
-      fontFamily: 'Segoe UI, sans-serif',
-      boxSizing: 'border-box',
-      padding: '40px',
-      overflow: 'auto'
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#F4F6F9',
+        fontFamily: 'Segoe UI, sans-serif',
+        boxSizing: 'border-box',
+        padding: '40px',
+        overflow: 'auto'
       }}
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#003366' }}>
-          DRDO Admin Dashboard
-        </h1>
-        <div style={{ fontSize: '16px', color: '#555' }}>
-          Total Scientists: <strong>{scientists.length}</strong>
-        </div>
-      </header>
+  <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#003366' }}>
+    DRDO Admin Dashboard
+  </h1>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    <div style={{ fontSize: '16px', color: '#555' }}>
+      Total Scientists: <strong>{scientists.length}</strong>
+    </div>
+    <button
+      onClick={() => {
+        localStorage.clear();
+        navigate('/');
+      }}
+      style={{
+        padding: '8px 16px',
+        backgroundColor: '#c0392b',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        marginLeft: '20px'
+      }}
+    >
+      Logout
+    </button>
+  </div>
+</header>
+
 
       <div style={{ display: 'flex', marginBottom: '24px' }}>
         <input
@@ -134,7 +178,6 @@ export default function AdminDashboard() {
           backgroundColor: '#FFFFFF',
           overflowX: 'auto'
         }}>
-          {/* Column headers */}
           <div style={{
             display: 'flex',
             padding: '12px 20px',
@@ -153,7 +196,6 @@ export default function AdminDashboard() {
             <div style={{ flex: 1, textAlign: 'right' }}>Research Area</div>
           </div>
 
-          {/* Scientist Rows */}
           {scientists.map((sci, index) => (
             <div
               key={sci.emp_id}
@@ -169,24 +211,12 @@ export default function AdminDashboard() {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6F0FF'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'}
             >
-              <div style={{ width: '80px', color: '#1A202C' }}>
-                {sci.emp_id}
-              </div>
-              <div style={{ flex: 1, fontWeight: '500', color: '#1A202C' }}>
-                {sci.firstname} {sci.lastname}
-              </div>
-              <div style={{ width: '100px', textAlign: 'center', color: '#4A5568' }}>
-                {sci.grade}
-              </div>
-              <div style={{ width: '140px', textAlign: 'center', color: '#4A5568' }}>
-                {sci.category}
-              </div>
-              <div style={{ width: '120px', textAlign: 'center', color: '#4A5568' }}>
-                {sci.pay_level}
-              </div>
-              <div style={{ flex: 1, textAlign: 'right', color: '#4A5568' }}>
-                {sci.research_area}
-              </div>
+              <div style={{ width: '80px', color: '#1A202C' }}>{sci.emp_id}</div>
+              <div style={{ flex: 1, fontWeight: '500', color: '#1A202C' }}>{sci.firstname} {sci.lastname}</div>
+              <div style={{ width: '100px', textAlign: 'center', color: '#4A5568' }}>{sci.grade}</div>
+              <div style={{ width: '140px', textAlign: 'center', color: '#4A5568' }}>{sci.category}</div>
+              <div style={{ width: '120px', textAlign: 'center', color: '#4A5568' }}>{sci.pay_level}</div>
+              <div style={{ flex: 1, textAlign: 'right', color: '#4A5568' }}>{sci.research_area}</div>
             </div>
           ))}
         </div>
@@ -194,3 +224,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
