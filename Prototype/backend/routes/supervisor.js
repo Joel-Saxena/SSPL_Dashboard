@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as supervisorController from '../controllers/supervisorController.js';
+import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+
 const router = express.Router();
-const supervisorController = require('../controllers/supervisorController');
-const { authenticate, authorizeRoles } = require('../middlewares/authMiddleware');
 
 router.use(authenticate, authorizeRoles('super_admin'));
 
@@ -25,4 +26,4 @@ router.put('/admin/group', supervisorController.assignAdminToGroup);
 // Returns complete group hierarchy with admins, scientists, and managed grades
 router.get('/groups', supervisorController.getGroupHierarchy);
 
-module.exports = router;
+export default router;

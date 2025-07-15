@@ -1,10 +1,10 @@
 // Handles login for admin/supervisor
-const jwt = require('jsonwebtoken');
-const pool = require('../db_config/db_connection');
+import jwt from 'jsonwebtoken';
+import pool from '../db_config/db_connection.js';
 
 // ROUTE 1: Login (POST /api/auth/login)
 // Allows admin or scientist to login with emp_id and password
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   const { emp_id, password } = req.body;
   if (!emp_id || !password) {
     return res.status(400).json({ message: 'emp_id and password required' });

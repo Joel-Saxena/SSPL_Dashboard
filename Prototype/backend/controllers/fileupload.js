@@ -1,0 +1,53 @@
+import * as Minio from 'minio'
+
+const minioClient = new Minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT,
+    port: process.env.MINIO_API_PORT,
+    useSSL: false, // Set to true in production
+    accessKey: process.env.MINIO_ACCESS_KEY,
+    secretKey: process.env.MINIO_SECRET_KEY,
+})
+
+// Check Connection
+try {
+    const buckets = await minioClient.listBuckets()
+    console.log('Successfully connected to MinIO')
+} catch (err) {
+    console.log(err.message)
+}
+
+
+// Function to upload profile picture
+export async function uploadProfilePicture(filestream, userId) {
+    const metaData = {
+        'Content-Type': 'image/jpeg',
+        'Additional-Metadata': 'profile-picture',
+    }
+    minioClient.putObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`, filestream, metaData, (err, objInfo) => {
+        if (err) {
+            console.error('Error uploading profile picture:', err)
+            return false
+        }
+        console.log('Successfully uploaded profile picture:', objInfo)
+        return true
+    })
+}
+
+// Function to retrieve profile picture
+export async function getProfilePicture(userId) {
+    let size = 0;
+    const dataStream = await minioClient.getObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`)
+    dataStream.on('data', function (chunk) {
+        size += chunk.length
+    })
+    dataStream.on('end', function () {
+        console.log(`Retrieved profile picture of size: ${size} bytes`)
+        return dataStream
+    })
+    dataStream.on('error', function (err) {
+        console.log(err)
+    })
+}
+
+
+

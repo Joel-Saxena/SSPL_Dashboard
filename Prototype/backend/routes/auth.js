@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { login } from '../controllers/authController.js';
+
 const router = express.Router();
-const authController = require('../controllers/authController');
 
 // ROUTE 1: Login (POST /api/auth/login)
 // Allows admin or supervisor to login with username and password
-router.post('/login', authController.login);
+router.post('/login', login);
 
-module.exports = router;
+export default router;

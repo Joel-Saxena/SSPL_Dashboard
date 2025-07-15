@@ -1,7 +1,7 @@
-const pool = require('../db_config/db_connection');
+import pool from '../db_config/db_connection.js';
 
 // ROUTE 1: Create new group (POST /api/supervisor/group)
-exports.createGroup = async (req, res) => {
+export const createGroup = async (req, res) => {
   const { group_name } = req.body;
   if (!group_name) {
     return res.status(400).json({ error: "Group name is required" });
@@ -26,7 +26,7 @@ exports.createGroup = async (req, res) => {
 };
 
 // ROUTE 2: Add new admin (POST /api/supervisor/admin)
-exports.addAdmin = async (req, res) => {
+export const addAdmin = async (req, res) => {
   const { 
     employeeData, 
     supervisor_id, 
@@ -127,7 +127,7 @@ exports.addAdmin = async (req, res) => {
 };
 
 // ROUTE 3: Add new scientist (POST /api/supervisor/scientist)
-exports.addScientist = async (req, res) => {
+export const addScientist = async (req, res) => {
   const { 
     employeeData,
     category,
@@ -244,7 +244,7 @@ exports.addScientist = async (req, res) => {
 };
 
 // ROUTE 4: Update admin's group (PUT /api/supervisor/admin/group)
-exports.assignAdminToGroup = async (req, res) => {
+export const assignAdminToGroup = async (req, res) => {
   const { admin_id, group_id } = req.body;
   if (!admin_id || !group_id) {
     return res.status(400).json({ error: "Admin ID and Group ID are required" });
@@ -273,7 +273,7 @@ exports.assignAdminToGroup = async (req, res) => {
 };
 
 // ROUTE 5: Get group hierarchy (GET /api/supervisor/groups)
-exports.getGroupHierarchy = async (req, res) => {
+export const getGroupHierarchy = async (req, res) => {
   try {
     // Get all groups
     const [groups] = await pool.query('SELECT * FROM `group`');

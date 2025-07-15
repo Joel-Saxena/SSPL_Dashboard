@@ -1,8 +1,8 @@
 // Handles all admin functionalities (for scientists in their group only)
-const pool = require('../db_config/db_connection');
+import pool from '../db_config/db_connection.js';
 
 // ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
-exports.getScientistsInGroup = async (req, res) => {
+export const getScientistsInGroup = async (req, res) => {
   try {
     const groupId = req.user.group_id;
     const [scientists] = await pool.query(
@@ -17,7 +17,7 @@ exports.getScientistsInGroup = async (req, res) => {
 };
 
 // ROUTE 2: Update scientist details (PUT /api/admin/scientist/:id)
-exports.updateScientistDetails = async (req, res) => {
+export const updateScientistDetails = async (req, res) => {
   try {
     const groupId = req.user.group_id;
     const sciId = req.params.id;
@@ -122,7 +122,7 @@ exports.updateScientistDetails = async (req, res) => {
 };
 
 // ROUTE 3: Search scientist by name (GET /api/admin/search)
-exports.searchScientistByName = async (req, res) => {
+export const searchScientistByName = async (req, res) => {
   try {
     const groupId = req.user.group_id;
     const { ScientistName } = req.query;
@@ -141,7 +141,7 @@ exports.searchScientistByName = async (req, res) => {
 };
 
 // ROUTE 4: Get complete scientist details (GET /api/admin/scientist/:id)
-exports.getCompleteScientistDetails = async (req, res) => {
+export const getCompleteScientistDetails = async (req, res) => {
   try {
     const groupId = req.user.group_id;
     const sciId = req.params.id;

@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as adminController from '../controllers/adminController.js';
+import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+
 const router = express.Router();
-const adminController = require('../controllers/adminController');
-const { authenticate, authorizeRoles } = require('../middlewares/authMiddleware');
 
 router.use(authenticate, authorizeRoles('admin'));
 
@@ -17,4 +18,6 @@ router.get('/search', adminController.searchScientistByName);
 // ROUTE 4: Get complete scientist details (GET /api/admin/scientist/:id)
 router.get('/scientist/:id', adminController.getCompleteScientistDetails);
 
-module.exports = router;
+export default router;
+
+
