@@ -13,25 +13,28 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchScientists = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/scientists', {
-        params: { group_id: groupId }
-      });
-      setScientists(response.data);
-      setError(null);
-    } catch (err) {
-      console.error('API Error:', err.response ? err.response.data : err.message);
-      setError('Failed to load scientists');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchScientists = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5000/api/admin/scientists', {
+          params: { group_id: groupId }
+        });
+        setScientists(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('API Error:', err.response ? err.response.data : err.message);
+        setError('Failed to load scientists');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchScientists();
+  }, [groupId]);
 
   const handleSearch = async () => {
     if (searchTerm.trim() === '') {
-      fetchScientists();
+      // fetchScientists(); // This line is removed as fetchScientists is now inside useEffect
       return;
     }
 
@@ -58,12 +61,8 @@ export default function AdminDashboard() {
   };
 
   const handleRowClick = (id) => {
-    navigate(`/scientist/${id}?group_id=${groupId}`);
+    navigate(`/profile?emp_id=${id}&group_id=${groupId}`);
   };
-
-  useEffect(() => {
-    fetchScientists();
-  }, []);
 
   return (
     <div
