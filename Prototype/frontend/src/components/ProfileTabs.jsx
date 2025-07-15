@@ -4,6 +4,7 @@ import 'jspdf-autotable';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 
 const TAB_LIST = [
@@ -160,15 +161,128 @@ const CustomDateInput = React.forwardRef(({ value, onClick, placeholder }, ref) 
 
 function ProfileTabs() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
   const empId = searchParams.get('emp_id');
-  const groupId = searchParams.get('group_id');
 
   // Sync group_id from URL to localStorage if present
   useEffect(() => {
-    if (groupId) {
-      localStorage.setItem('group_id', groupId);
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        alert('Authentication token not found. Please login again.');
+        window.location.href = "/";
+        return;
+      }
+
+      if (empId) {
+        try {
+          const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+
+          const { profile } = response.data;
+
+          setPersonal({
+            firstName: profile.firstname || '',
+            middleName: profile.middlename || '',
+            lastName: profile.lastname || '',
+            gender: profile.gender || '',
+            dob: profile.date_of_birth || '',
+            aadhaar: profile.aadhaar || '',
+            pan: profile.pan_number || '',
+            pisPin: profile.pis_pin_number || '',
+            email: profile.email || '',
+            payLevel: profile.pay_level || '',
+            category: profile.category || '',
+            educationQualification: profile.education_qualification || '',
+            university: profile.university || '',
+            subject: profile.subject || '',
+            permAddress: profile.address1_permanent || '',
+            tempAddress: profile.address2_temporary || '',
+          });
+
+          setService({
+            designation: '',
+            subDesignation: '',
+            payLevel: profile.pay_level || '',
+            group: profile.groupId || '',
+            supervisor: '',
+            dateOfJoining: profile.date_of_joining || '',
+            dateOfRetirement: profile.date_of_retirement || '',
+            dateCurrentDesig: profile.date_in_present_designation || '',
+          });
+
+        } catch (err) {
+          if (err.response && (err.response.status === 403 || err.response.status === 404)) {
+            setError('Scientist not found or access denied (not in your group).');
+            alert('Access denied: This scientist is not in your group.');
+            navigate('/AdminDashboard');
+          } else {
+            console.error('Error fetching profile:', err);
+            setError('Failed to load profile.');
+            alert('Unexpected error occurred while loading profile.');
+          }
+          return;
+        }
+
+      } else {
+        const userData = JSON.parse(localStorage.getItem('user'));
+        const localGroupId = localStorage.getItem('group_id');
+
+        if (!userData || !userData.id) {
+          setError('User not found. Please login again.');
+          alert('User not found. Please login again.');
+          window.location.href = "/";
+          return;
+        }
+
+        setPersonal({
+          firstName: userData.firstname || '',
+          middleName: userData.middlename || '',
+          lastName: userData.lastname || '',
+          gender: userData.gender || '',
+          dob: userData.date_of_birth || '',
+          aadhaar: userData.aadhaar || '',
+          pan: userData.pan_number || '',
+          pisPin: userData.pis_pin_number || '',
+          email: userData.email || '',
+          payLevel: userData.pay_level || '',
+          category: userData.category || '',
+          educationQualification: userData.education_qualification || '',
+          university: userData.university || '',
+          subject: userData.subject || '',
+          permAddress: userData.address1_permanent || '',
+          tempAddress: userData.address2_temporary || '',
+        });
+
+        setService({
+          designation: '',
+          subDesignation: '',
+          payLevel: userData.pay_level || '',
+          group: localGroupId || '',
+          supervisor: '',
+          dateOfJoining: userData.date_of_joining || '',
+          dateOfRetirement: userData.date_of_retirement || '',
+          dateCurrentDesig: userData.date_in_present_designation || '',
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching user data:', err);
+      setError('Failed to load user data.');
+    } finally {
+      setLoading(false);
     }
-  }, [groupId]);
+  };
+
+  fetchUserData();
+}, [empId]);
+
   
   const [tab, setTab] = useState(0);
   const [personal, setPersonal] = useState(initialPersonal);
@@ -201,127 +315,110 @@ function ProfileTabs() {
   });
 
   // Add Scientist Modal State
-  const [showAddScientistModal, setShowAddScientistModal] = useState(false);
-  const [addScientistForm, setAddScientistForm] = useState({
-    firstname: '',
-    middlename: '',
-    lastname: '',
-    email: '',
-    gender: '',
-    aadhaar: '',
-    pan_number: '',
-    pis_pin_number: '',
-    education_qualification: '',
-    category: '',
-    research_area: '',
-    grade: '',
-    pay_level: '',
-    university: '',
-    subject: '',
-    date_of_birth: '',
-    date_of_joining: '',
-    date_of_retirement: '',
-    date_in_present_designation: '',
-    address1_permanent: '',
-    address2_temporary: '',
-    password: ''
-  });
+
 
   useEffect(() => {
     const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        
-        // If empId is provided (from AdminDashboard), fetch that scientist's data
-        if (empId && groupId) {
-          const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
-            params: { admin_group_id: groupId }
-          });
-          
-          const { profile } = response.data;
-          
-          setPersonal({
-            firstName: profile.firstname || '',
-            middleName: profile.middlename || '',
-            lastName: profile.lastname || '',
-            gender: profile.gender || '',
-            dob: profile.date_of_birth || '',
-            aadhaar: profile.aadhaar || '',
-            pan: profile.pan_number || '',
-            pisPin: profile.pis_pin_number || '',
-            email: profile.email || '',
-            payLevel: profile.pay_level || '',
-            category: profile.category || '',
-            educationQualification: profile.education_qualification || '',
-            university: profile.university || '',
-            subject: profile.subject || '',
-            permAddress: profile.address1_permanent || '',
-            tempAddress: profile.address2_temporary || '',
-          });
-
-          setService({
-            designation: '',
-            subDesignation: '',
-            payLevel: profile.pay_level || '',
-            group: groupId || '',
-            supervisor: '',
-            dateOfJoining: profile.date_of_joining || '',
-            dateOfRetirement: profile.date_of_retirement || '',
-            dateCurrentDesig: profile.date_in_present_designation || '',
-          });
-        } else {
-          // Get user data from localStorage (set by your Home component)
-          const userData = JSON.parse(localStorage.getItem('user'));
-          const localGroupId = localStorage.getItem('group_id');
-          
-          if (!userData || !userData.id) {
-            setError('User not found. Please login again.');
-            return;
-          }
-
-          // For now, we'll populate with user data from localStorage
-          // In a real scenario, you'd fetch from backend
-          setPersonal({
-            firstName: userData.firstname || '',
-            middleName: userData.middlename || '',
-            lastName: userData.lastname || '',
-            gender: userData.gender || '',
-            dob: userData.date_of_birth || '',
-            aadhaar: userData.aadhaar || '',
-            pan: userData.pan_number || '',
-            pisPin: userData.pis_pin_number || '',
-            email: userData.email || '',
-            payLevel: userData.pay_level || '',
-            category: userData.category || '',
-            educationQualification: userData.education_qualification || '',
-            university: userData.university || '',
-            subject: userData.subject || '',
-            permAddress: userData.address1_permanent || '',
-            tempAddress: userData.address2_temporary || '',
-          });
-
-          setService({
-            designation: '',
-            subDesignation: '',
-            payLevel: userData.pay_level || '',
-            group: localGroupId || '',
-            supervisor: '',
-            dateOfJoining: userData.date_of_joining || '',
-            dateOfRetirement: userData.date_of_retirement || '',
-            dateCurrentDesig: userData.date_in_present_designation || '',
-          });
+  try {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please login again.');
+      return;
+    }
+    if (empId) {
+      const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
+      });
 
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('Failed to load user data');
-      } finally {
-        setLoading(false);
+      const { profile } = response.data;
+
+      setPersonal({
+        firstName: profile.firstname || '',
+        middleName: profile.middlename || '',
+        lastName: profile.lastname || '',
+        gender: profile.gender || '',
+        dob: profile.date_of_birth || '',
+        aadhaar: profile.aadhaar || '',
+        pan: profile.pan_number || '',
+        pisPin: profile.pis_pin_number || '',
+        email: profile.email || '',
+        payLevel: profile.pay_level || '',
+        category: profile.category || '',
+        educationQualification: profile.education_qualification || '',
+        university: profile.university || '',
+        subject: profile.subject || '',
+        permAddress: profile.address1_permanent || '',
+        tempAddress: profile.address2_temporary || '',
+      });
+
+      setService({
+        designation: '',
+        subDesignation: '',
+        payLevel: profile.pay_level || '',
+        group: profile.groupId || '',
+        supervisor: '',
+        dateOfJoining: profile.date_of_joining || '',
+        dateOfRetirement: profile.date_of_retirement || '',
+        dateCurrentDesig: profile.date_in_present_designation || '',
+      });
+
+    } else {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const localGroupId = localStorage.getItem('group_id');
+
+      if (!userData || !userData.id) {
+        setError('User not found. Please login again.');
+        return;
       }
-    };
+
+      setPersonal({
+        firstName: userData.firstname || '',
+        middleName: userData.middlename || '',
+        lastName: userData.lastname || '',
+        gender: userData.gender || '',
+        dob: userData.date_of_birth || '',
+        aadhaar: userData.aadhaar || '',
+        pan: userData.pan_number || '',
+        pisPin: userData.pis_pin_number || '',
+        email: userData.email || '',
+        payLevel: userData.pay_level || '',
+        category: userData.category || '',
+        educationQualification: userData.education_qualification || '',
+        university: userData.university || '',
+        subject: userData.subject || '',
+        permAddress: userData.address1_permanent || '',
+        tempAddress: userData.address2_temporary || '',
+      });
+
+      setService({
+        designation: '',
+        subDesignation: '',
+        payLevel: userData.pay_level || '',
+        group: localGroupId || '',
+        supervisor: '',
+        dateOfJoining: userData.date_of_joining || '',
+        dateOfRetirement: userData.date_of_retirement || '',
+        dateCurrentDesig: userData.date_in_present_designation || '',
+      });
+    }
+  } catch (err) {
+    if (err.response && (err.response.status === 403 || err.response.status === 404)) {
+      setError('Scientist not found or you do not have access.');
+    } else {
+      console.error('Unexpected error fetching user data:', err);
+      setError('Failed to load user data.');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     fetchUserData();
-  }, [empId, groupId]);
+  }, [empId]);
 
   // --- Handlers ---
   const handlePersonalChange = e => {
@@ -401,10 +498,6 @@ function ProfileTabs() {
 
   // Sidebar handlers
   const handleSidebarToggle = () => setSidebarOpen(!sidebarOpen);
-  const handleAddNewScientist = () => {
-    setShowAddScientistModal(true);
-    setSidebarOpen(false); // Close sidebar when opening modal
-  };
   const handleGoToDashboard = () => {
     const groupId = localStorage.getItem('group_id');
     window.location.href = `/AdminDashboard?group_id=${groupId}`;
@@ -414,109 +507,6 @@ function ProfileTabs() {
     localStorage.removeItem('role');
     localStorage.removeItem('group_id');
     window.location.href = '/';
-  };
-
-  // Add Scientist Form Handlers
-  const handleAddScientistFormChange = (e) => {
-    const { name, value } = e.target;
-    setAddScientistForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddScientistSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-
-      const groupId = localStorage.getItem('group_id');
-      if (!groupId) {
-        alert('Group ID not found. Please login again.');
-        return;
-      }
-
-      // Split the form data
-      const {
-        category,
-        research_area,
-        grade,
-        ...employeeData
-      } = addScientistForm;
-
-      // Prepare payload for supervisor route
-      const payload = {
-        employeeData,
-        category,
-        research_area,
-        grade,
-        group_id: groupId
-      };
-
-      // Send request to supervisor endpoint
-      await axios.post('http://localhost:5000/api/supervisor/scientist', payload);
-
-      alert('Scientist added successfully!');
-      setShowAddScientistModal(false);
-
-      // Reset form
-      setAddScientistForm({
-        firstname: '',
-        middlename: '',
-        lastname: '',
-        email: '',
-        gender: '',
-        aadhaar: '',
-        pan_number: '',
-        pis_pin_number: '',
-        education_qualification: '',
-        category: '',
-        research_area: '',
-        grade: '',
-        pay_level: '',
-        university: '',
-        subject: '',
-        date_of_birth: '',
-        date_of_joining: '',
-        date_of_retirement: '',
-        date_in_present_designation: '',
-        address1_permanent: '',
-        address2_temporary: '',
-        password: ''
-      });
-
-    } catch (err) {
-      console.error('Error adding scientist:', err);
-      alert('Failed to add scientist. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCloseAddScientistModal = () => {
-    setShowAddScientistModal(false);
-    // Reset form
-    setAddScientistForm({
-      firstname: '',
-      middlename: '',
-      lastname: '',
-      email: '',
-      gender: '',
-      aadhaar: '',
-      pan_number: '',
-      pis_pin_number: '',
-      education_qualification: '',
-      category: '',
-      research_area: '',
-      grade: '',
-      pay_level: '',
-      university: '',
-      subject: '',
-      date_of_birth: '',
-      date_of_joining: '',
-      date_of_retirement: '',
-      date_in_present_designation: '',
-      address1_permanent: '',
-      address2_temporary: '',
-      password: ''
-    });
   };
 
   // Edit and Save handlers for each tab
@@ -535,64 +525,69 @@ function ProfileTabs() {
   };
 
   const handleSaveTab = async (tabName) => {
+    const formatDate = (isoDateStr) => {
+  if (!isoDateStr) return '';
+  const date = new Date(isoDateStr);
+  return date.toISOString().split('T')[0]; // returns YYYY-MM-DD
+};
+
     try {
       setLoading(true);
-      
-      // Determine which scientist ID to use
       const scientistId = empId || JSON.parse(localStorage.getItem('user'))?.id;
-      const adminGroupId = groupId || localStorage.getItem('group_id');
-      
       if (!scientistId) {
         alert('User not found. Please login again.');
         return;
       }
 
       let payload = {};
-      
-      // Prepare payload based on tab
       if (tabName === 'personal') {
-        payload = {
-          admin_group_id: adminGroupId,
-          firstname: personal.firstName,
-          middlename: personal.middleName,
-          lastname: personal.lastName,
-          gender: personal.gender,
-          aadhaar: personal.aadhaar,
-          education_qualification: personal.educationQualification,
-          category: personal.category,
-          pay_level: personal.payLevel,
-          university: personal.university,
-          subject: personal.subject,
-          date_of_birth: personal.dob,
-          pan_number: personal.pan,
-          pis_pin_number: personal.pisPin,
-          address1_permanent: personal.permAddress,
-          address2_temporary: personal.tempAddress,
-        };
-      } else if (tabName === 'service') {
-        payload = {
-          admin_group_id: adminGroupId,
-          pay_level: service.payLevel,
-          date_of_joining: service.dateOfJoining,
-          date_of_retirement: service.dateOfRetirement,
-          date_in_present_designation: service.dateCurrentDesig,
-        };
-      }
-      // Note: Family and Documents tabs don't have backend fields, so they only save to frontend
+  payload = {
+    firstname: personal.firstName,
+    middlename: personal.middleName,
+    lastname: personal.lastName,
+    gender: personal.gender,
+    aadhaar: personal.aadhaar,
+    education_qualification: personal.educationQualification,
+    category: personal.category,
+    pay_level: personal.payLevel,
+    university: personal.university,
+    subject: personal.subject,
+    date_of_birth: formatDate(personal.dob),
+    pan_number: personal.pan,
+    pis_pin_number: personal.pisPin,
+    address1_permanent: personal.permAddress,
+    address2_temporary: personal.tempAddress,
+  };
+} else if (tabName === 'service') {
+  payload = {
+    pay_level: service.payLevel,
+    date_of_joining: formatDate(service.dateOfJoining),
+    date_of_retirement: formatDate(service.dateOfRetirement),
+    date_in_present_designation: formatDate(service.dateCurrentDesig),
+  };
+}
 
-      // Send update to backend for personal and service tabs
       if (tabName === 'personal' || tabName === 'service') {
-        await axios.put(`http://localhost:5000/api/admin/scientist/${scientistId}`, payload);
+        const token = localStorage.getItem('token');
+        await axios.put(
+          `http://localhost:5000/api/admin/scientist/${scientistId}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }
+          }
+        );
       }
-      
-      // Disable edit mode
+
       setEditMode(prev => ({ ...prev, [tabName]: false }));
-      
       alert(`${tabName.charAt(0).toUpperCase() + tabName.slice(1)} details saved successfully!`);
     } catch (err) {
-      console.error('Error saving tab data:', err);
-      alert('Failed to save changes. Please try again.');
-    } finally {
+  console.error('Error saving tab data:', err.response?.data || err.message);
+  alert(`Error: ${err.response?.data?.message || err.message}`);
+}
+ finally {
       setLoading(false);
     }
   };
@@ -638,6 +633,7 @@ function ProfileTabs() {
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Saving...' : 'Save Changes'}
+
               </button>
               <button
                 onClick={() => handleCancelEdit('personal')}
@@ -891,6 +887,7 @@ function ProfileTabs() {
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Saving...' : 'Save Changes'}
+                ) 
               </button>
               <button
                 onClick={() => handleCancelEdit('service')}
@@ -1017,155 +1014,191 @@ function ProfileTabs() {
   // Render: renderFamily
   const renderFamily = () => (
     <div className="space-y-6">
+    {/* Edit/Save/Cancel Buttons */}
+    <div className="flex justify-end gap-4 mb-4">
+      {!editMode.family && (
+        <button
+          className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded"
+          onClick={() => handleEditTab('family')}
+        >
+          Edit
+        </button>
+      )}
+      {editMode.family && (
+        <>
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+            onClick={() => handleSaveTab('family')}
+          >
+            Save
+          </button>
+          <button
+            className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded"
+            onClick={() => handleCancelEdit('family')}
+          >
+            Cancel
+          </button>
+        </>
+      )}
+    </div>
+
       {/* Spouse */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowSpouse(v => !v)}>
-          <span>Spouse Details</span>
-          <span>{showSpouse ? '-' : '+'}</span>
-        </button>
-        {showSpouse && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label className="block font-medium text-black">Full Name</label>
-              <input name="name" value={family.spouse.name} onChange={handleSpouseChange} className="input" />
-            </div>
-            <div>
-              <label className="block font-medium text-black">DOB</label>
-              <DatePicker
-                selected={family.spouse.dob ? new Date(family.spouse.dob) : null}
-                onChange={date => handleSpouseChange({ target: { name: 'dob', value: date ? date.toISOString().slice(0, 10) : '' } })}
-                customInput={<CustomDateInput placeholder="Select date" />}
-                dateFormat="yyyy-MM-dd"
-                showYearDropdown
-                showMonthDropdown
-                dropdownMode="select"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-black">Occupation</label>
-              <input name="occupation" value={family.spouse.occupation} onChange={handleSpouseChange} className="input" />
-            </div>
+      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowSpouse(v => !v)}>
+        <span>Spouse Details</span>
+        <span>{showSpouse ? '-' : '+'}</span>
+      </button>
+      {showSpouse && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block font-medium text-black">Full Name</label>
+            <input name="name" value={family.spouse.name} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block font-medium text-black">DOB</label>
+            <DatePicker
+              selected={family.spouse.dob ? new Date(family.spouse.dob) : null}
+              onChange={date => handleSpouseChange({ target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+              customInput={<CustomDateInput placeholder="Select date" />}
+              disabled={!editMode.family}
+              dateFormat="yyyy-MM-dd"
+              showYearDropdown
+              showMonthDropdown
+              dropdownMode="select"
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-black">Occupation</label>
+            <input name="occupation" value={family.spouse.occupation} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
+          </div>
+        </div>
+      )}
+    </div>
+
       {/* Children */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowChildren(v => !v)}>
-          <span>Children Details</span>
-          <span>{showChildren ? '-' : '+'}</span>
-        </button>
-        {showChildren && (
-          <div className="space-y-4 mt-4">
-            {family.children.map((child, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-blue-50 rounded-lg p-4">
-                <div>
-                  <label className="block font-medium text-black">Name</label>
-                  <input name="name" value={child.name} onChange={e => handleChildChange(idx, e)} className="input" />
-                </div>
-                <div>
-                  <label className="block font-medium text-black">Gender</label>
-                  <select name="gender" value={child.gender} onChange={e => handleChildChange(idx, e)} className="input">
-                    <option value="">Select</option>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-black">DOB</label>
-                  <DatePicker
-                    selected={child.dob ? new Date(child.dob) : null}
-                    onChange={date => handleChildChange(idx, { target: { name: 'dob', value: date ? date.toISOString().slice(0, 10) : '' } })}
-                    customInput={<CustomDateInput placeholder="Select date" />}
-                    dateFormat="yyyy-MM-dd"
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                  />
-                </div>
+      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowChildren(v => !v)}>
+        <span>Children Details</span>
+        <span>{showChildren ? '-' : '+'}</span>
+      </button>
+      {showChildren && (
+        <div className="space-y-4 mt-4">
+          {family.children.map((child, idx) => (
+            <div key={idx} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-blue-50 rounded-lg p-4">
+              <div>
+                <label className="block font-medium text-black">Name</label>
+                <input name="name" value={child.name} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family} />
+              </div>
+              <div>
+                <label className="block font-medium text-black">Gender</label>
+                <select name="gender" value={child.gender} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family}>
+                  <option value="">Select</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium text-black">DOB</label>
+                <DatePicker
+                  selected={child.dob ? new Date(child.dob) : null}
+                  onChange={date => handleChildChange(idx, { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+                  customInput={<CustomDateInput placeholder="Select date" />}
+                  disabled={!editMode.family}
+                  dateFormat="yyyy-MM-dd"
+                  showYearDropdown
+                  showMonthDropdown
+                  dropdownMode="select"
+                />
+              </div>
+              {editMode.family && (
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => handleRemoveChild(idx)} className="ml-2 text-red-500 bg-white border border-red-200 rounded-full p-2 hover:bg-red-50 transition"><FaTrash /></button>
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+          ))}
+          {editMode.family && (
             <button type="button" onClick={handleAddChild} className="btn-primary flex items-center gap-2 mt-2"><FaPlus /> Add Child</button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+    </div>
       {/* Parents */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowParents(v => !v)}>
-          <span>Parent Details</span>
-          <span>{showParents ? '-' : '+'}</span>
-        </button>
-        {showParents && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {/* Father */}
-            <div>
-              <label className="block font-medium text-black">Father's Name</label>
-              <input name="name" value={family.father.name} onChange={e => handleParentChange('father', e)} className="input" />
-              <label className="block font-medium text-black mt-2">DOB</label>
-              <DatePicker
-                selected={family.father.dob ? new Date(family.father.dob) : null}
-                onChange={date => handleParentChange('father', { target: { name: 'dob', value: date ? date.toISOString().slice(0, 10) : '' } })}
-                customInput={<CustomDateInput placeholder="Select date" />}
-                dateFormat="yyyy-MM-dd"
-                showYearDropdown
-                showMonthDropdown
-                dropdownMode="select"
-              />
-              <label className="block font-medium text-black mt-2">Address (if different)</label>
-              <input name="address" value={family.father.address} onChange={e => handleParentChange('father', e)} className="input" />
-            </div>
-            {/* Mother */}
-            <div>
-              <label className="block font-medium text-black">Mother's Name</label>
-              <input name="name" value={family.mother.name} onChange={e => handleParentChange('mother', e)} className="input" />
-              <label className="block font-medium text-black mt-2">DOB</label>
-              <DatePicker
-                selected={family.mother.dob ? new Date(family.mother.dob) : null}
-                onChange={date => handleParentChange('mother', { target: { name: 'dob', value: date ? date.toISOString().slice(0, 10) : '' } })}
-                customInput={<CustomDateInput placeholder="Select date" />}
-                dateFormat="yyyy-MM-dd"
-                showYearDropdown
-                showMonthDropdown
-                dropdownMode="select"
-              />
-              <label className="block font-medium text-black mt-2">Address (if different)</label>
-              <input name="address" value={family.mother.address} onChange={e => handleParentChange('mother', e)} className="input" />
-            </div>
+      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowParents(v => !v)}>
+        <span>Parent Details</span>
+        <span>{showParents ? '-' : '+'}</span>
+      </button>
+      {showParents && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block font-medium text-black">Father's Name</label>
+            <input name="name" value={family.father.name} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
+            <label className="block font-medium text-black mt-2">DOB</label>
+            <DatePicker
+              selected={family.father.dob ? new Date(family.father.dob) : null}
+              onChange={date => handleParentChange('father', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+              customInput={<CustomDateInput placeholder="Select date" />}
+              disabled={!editMode.family}
+              dateFormat="yyyy-MM-dd"
+              showYearDropdown
+              showMonthDropdown
+              dropdownMode="select"
+            />
+            <label className="block font-medium text-black mt-2">Address (if different)</label>
+            <input name="address" value={family.father.address} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block font-medium text-black">Mother's Name</label>
+            <input name="name" value={family.mother.name} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
+            <label className="block font-medium text-black mt-2">DOB</label>
+            <DatePicker
+              selected={family.mother.dob ? new Date(family.mother.dob) : null}
+              onChange={date => handleParentChange('mother', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+              customInput={<CustomDateInput placeholder="Select date" />}
+              disabled={!editMode.family}
+              dateFormat="yyyy-MM-dd"
+              showYearDropdown
+              showMonthDropdown
+              dropdownMode="select"
+            />
+            <label className="block font-medium text-black mt-2">Address (if different)</label>
+            <input name="address" value={family.mother.address} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
+          </div>
+        </div>
+      )}
+    </div>
+
       {/* Emergency Contact */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowEmergency(v => !v)}>
-          <span>Emergency Contact</span>
-          <span>{showEmergency ? '-' : '+'}</span>
-        </button>
-        {showEmergency && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label className="block font-medium text-black">Name</label>
-              <input name="name" value={family.emergency.name} onChange={handleEmergencyChange} className="input" />
-            </div>
-            <div>
-              <label className="block font-medium text-black">Relation</label>
-              <input name="relation" value={family.emergency.relation} onChange={handleEmergencyChange} className="input" />
-            </div>
-            <div>
-              <label className="block font-medium text-black">Mobile Number</label>
-              <input name="mobile" value={family.emergency.mobile} onChange={handleEmergencyChange} className="input" />
-            </div>
-            <div className="md:col-span-2 lg:col-span-1">
-              <label className="block font-medium text-black">Address</label>
-              <input name="address" value={family.emergency.address} onChange={handleEmergencyChange} className="input" />
-            </div>
+      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowEmergency(v => !v)}>
+        <span>Emergency Contact</span>
+        <span>{showEmergency ? '-' : '+'}</span>
+      </button>
+      {showEmergency && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block font-medium text-black">Name</label>
+            <input name="name" value={family.emergency.name} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
           </div>
-        )}
-      </div>
+          <div>
+            <label className="block font-medium text-black">Relation</label>
+            <input name="relation" value={family.emergency.relation} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+          </div>
+          <div>
+            <label className="block font-medium text-black">Mobile Number</label>
+            <input name="mobile" value={family.emergency.mobile} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+          </div>
+          <div className="md:col-span-2 lg:col-span-1">
+            <label className="block font-medium text-black">Address</label>
+            <input name="address" value={family.emergency.address} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+          </div>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 
   // === Documents Tab ===
   // State: docFiles, editMode.documents, backupData.documents
@@ -1203,327 +1236,6 @@ function ProfileTabs() {
         </div>
       ))}
     </div>
-  );
-
-  // === Add Scientist Modal Section ===
-  // State: showAddScientistModal, addScientistForm
-  // Handlers: handleAddScientistFormChange, handleAddScientistSubmit, handleCloseAddScientistModal
-  // Render: renderAddScientistModal
-  const renderAddScientistModal = () => (
-    showAddScientistModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-[#003366]">Add New Scientist</h2>
-            <button
-              onClick={handleCloseAddScientistModal}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleAddScientistSubmit} className="space-y-6">
-            {/* Personal Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#003366] mb-4">Personal Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-sm mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    name="firstname"
-                    value={addScientistForm.firstname}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Middle Name</label>
-                  <input
-                    type="text"
-                    name="middlename"
-                    value={addScientistForm.middlename}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    name="lastname"
-                    value={addScientistForm.lastname}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Email *</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={addScientistForm.email}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Gender *</label>
-                  <select
-                    name="gender"
-                    value={addScientistForm.gender}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    required
-                  >
-                    <option value="">Select</option>
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                    <option value="O">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Password *</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={addScientistForm.password}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Identity Documents */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#003366] mb-4">Identity Documents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Aadhaar Number</label>
-                  <input
-                    type="text"
-                    name="aadhaar"
-                    value={addScientistForm.aadhaar}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    maxLength="12"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">PAN Number</label>
-                  <input
-                    type="text"
-                    name="pan_number"
-                    value={addScientistForm.pan_number}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    maxLength="10"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">PIS/PIN Number</label>
-                  <input
-                    type="text"
-                    name="pis_pin_number"
-                    value={addScientistForm.pis_pin_number}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Education & Professional Details */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#003366] mb-4">Education & Professional Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Education Qualification</label>
-                  <input
-                    type="text"
-                    name="education_qualification"
-                    value={addScientistForm.education_qualification}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">University</label>
-                  <input
-                    type="text"
-                    name="university"
-                    value={addScientistForm.university}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Subject</label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={addScientistForm.subject}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Category</label>
-                  <select
-                    name="category"
-                    value={addScientistForm.category}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  >
-                    <option value="">Select</option>
-                    <option value="GEN">General</option>
-                    <option value="OBC">Other Backward Class (OBC)</option>
-                    <option value="SC">Scheduled Caste (SC)</option>
-                    <option value="ST">Scheduled Tribe (ST)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Research Area</label>
-                  <input
-                    type="text"
-                    name="research_area"
-                    value={addScientistForm.research_area}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Grade</label>
-                  <select
-                    name="grade"
-                    value={addScientistForm.grade}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  >
-                    <option value="">Select</option>
-                    <option value="H">H</option>
-                    <option value="G">G</option>
-                    <option value="F">F</option>
-                    <option value="E">E</option>
-                    <option value="D">D</option>
-                    <option value="C">C</option>
-                    <option value="B">B</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Pay Level</label>
-                  <input
-                    type="text"
-                    name="pay_level"
-                    value={addScientistForm.pay_level}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Important Dates */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#003366] mb-4">Important Dates</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Date of Birth</label>
-                  <input
-                    type="date"
-                    name="date_of_birth"
-                    value={addScientistForm.date_of_birth}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Date of Joining</label>
-                  <input
-                    type="date"
-                    name="date_of_joining"
-                    value={addScientistForm.date_of_joining}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Date of Retirement</label>
-                  <input
-                    type="date"
-                    name="date_of_retirement"
-                    value={addScientistForm.date_of_retirement}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Date in Present Designation</label>
-                  <input
-                    type="date"
-                    name="date_in_present_designation"
-                    value={addScientistForm.date_in_present_designation}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Addresses */}
-            <div>
-              <h3 className="text-lg font-semibold text-[#003366] mb-4">Addresses</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Permanent Address</label>
-                  <textarea
-                    name="address1_permanent"
-                    value={addScientistForm.address1_permanent}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    rows="3"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-sm mb-1">Temporary Address</label>
-                  <textarea
-                    name="address2_temporary"
-                    value={addScientistForm.address2_temporary}
-                    onChange={handleAddScientistFormChange}
-                    className="input"
-                    rows="3"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex justify-end gap-4 pt-6 border-t">
-              <button
-                type="button"
-                onClick={handleCloseAddScientistModal}
-                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-[#003366] text-white rounded-md hover:bg-[#002244] transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Adding...' : 'Add Scientist'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )
   );
 
   // --- Main Render ---
@@ -1567,13 +1279,6 @@ function ProfileTabs() {
           </div>
           
           {/* Sidebar Buttons */}
-          <button 
-            className="w-11/12 py-3 mb-3 bg-white text-[#003366] border-none rounded font-bold text-base cursor-pointer hover:bg-gray-100 transition-colors"
-            onClick={handleAddNewScientist}
-          >
-            ADD NEW SCIENTIST
-          </button>
-          
           <button 
             className="w-11/12 py-3 mb-3 bg-white text-[#003366] border-none rounded font-bold text-base cursor-pointer hover:bg-gray-100 transition-colors"
             onClick={handleGoToDashboard}
@@ -1632,9 +1337,6 @@ function ProfileTabs() {
       <footer className="bg-blue-900 text-white text-center py-3 text-sm">
         &copy; {new Date().getFullYear()} DRDO. All rights reserved.
       </footer>
-
-      {/* Add Scientist Modal */}
-      {renderAddScientistModal()}
 
       {/* Custom Scroll Animation (copied from Home.jsx) */}
       <style>{`
