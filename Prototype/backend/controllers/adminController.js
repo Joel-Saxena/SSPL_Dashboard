@@ -1,3 +1,4 @@
+// Handles all admin functionalities (for scientists in their group only)
 const pool = require('../db_config/db_connection');
 
 // ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
@@ -21,9 +22,11 @@ exports.updateScientistDetails = async (req, res) => {
     const groupId = req.user.group_id;
     const sciId = req.params.id;
 
+    // Only allow update if scientist is in admin's group
     const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
     if (rows.length === 0) return res.status(403).json({ message: 'Not authorized' });
 
+    // destructure possible updates
     const {
       firstname, middlename, lastname, gender, aadhaar, education_qualification,
       category, research_area, grade, pay_level, university, subject, date_of_birth,
@@ -33,6 +36,7 @@ exports.updateScientistDetails = async (req, res) => {
 
     let affectedRows = 0;
 
+    // update employee fields
     if (
       firstname || middlename || lastname || gender || aadhaar || education_qualification ||
       pay_level || university || subject || date_of_birth || date_of_joining || date_of_retirement ||
@@ -65,20 +69,25 @@ exports.updateScientistDetails = async (req, res) => {
       affectedRows += empResult.affectedRows;
     }
 
+    // If grade is being updated, check if group manages the new grade
     if (grade) {
+      // Get current group_id of the scientist
       const [[sci]] = await pool.query('SELECT group_id FROM scientist WHERE emp_id = ?', [sciId]);
       if (sci && sci.group_id !== null) {
+        // Check if the group manages the new grade
         const [managed] = await pool.query(
           'SELECT * FROM managed_scientist_grade WHERE group_id = ? AND scientist_grade = ?',
           [sci.group_id, grade]
         );
         if (managed.length === 0) {
+          // Group does not manage new grade, set group_id to NULL
           const [sciResult] = await pool.query(
             'UPDATE scientist SET grade = ?, group_id = NULL, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
             [grade, category, research_area, sciId]
           );
           affectedRows += sciResult.affectedRows;
         } else {
+          // Group manages new grade, update normally
           const [sciResult] = await pool.query(
             'UPDATE scientist SET grade = ?, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
             [grade, category, research_area, sciId]
@@ -86,6 +95,7 @@ exports.updateScientistDetails = async (req, res) => {
           affectedRows += sciResult.affectedRows;
         }
       } else {
+        // No group assigned, just update
         const [sciResult] = await pool.query(
           'UPDATE scientist SET grade = ?, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
           [grade, category, research_area, sciId]
@@ -93,6 +103,7 @@ exports.updateScientistDetails = async (req, res) => {
         affectedRows += sciResult.affectedRows;
       }
     } else if (category || research_area) {
+      // Only category or research_area is being updated
       const [sciResult] = await pool.query(
         'UPDATE scientist SET category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
         [category, research_area, sciId]
@@ -135,6 +146,7 @@ exports.getCompleteScientistDetails = async (req, res) => {
     const groupId = req.user.group_id;
     const sciId = req.params.id;
 
+    // Only allow if scientist is in admin's group
     const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
     if (rows.length === 0) return res.status(404).json({ message: 'Scientist not found or not in your group' });
 
