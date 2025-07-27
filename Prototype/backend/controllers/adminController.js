@@ -1,5 +1,9 @@
 // Handles all admin functionalities (for scientists in their group only)
 import pool from '../db_config/db_connection.js';
+import { uploadProfilePicture, getProfilePicture } from './fileupload.js';
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
+
 
 // ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
 export const getScientistsInGroup = async (req, res) => {
@@ -162,5 +166,61 @@ export const getCompleteScientistDetails = async (req, res) => {
     res.json({ profile: profileRows[0], phones, landlines, history });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching scientist details' });
+  }
+};
+
+// ROUTE 5: upload file (POST /api/admin/upload)
+export const uploadFile = async (req, res) => {
+  try {
+    const file = req.file;
+    const userId = req.body.user_id;
+    if (!file || !userId) {
+      return res.status(400).json({ message: 'File and user ID are required' });
+    }
+    else {
+      const uploadResult = await uploadProfilePicture(file, userId);
+      if (uploadResult) {
+        res.json({ message: 'File uploaded successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to upload file' });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: `Error uploading file: ${error.message}` });
+  }
+}
+
+// ROUTE 6: Get file (GET /api/admin/getfile?emp_id=:id&file_type=:fileType)
+export const getFile = async (req, res) => {
+  try {
+    const userId = req.query.emp_id;
+    const fileType = req.query.file_type;
+
+    if (!userId || !fileType) {
+      return res.status(400).json({ message: 'Employee ID and file type are required' });
+    }
+
+    if (fileType == 'profile_pic') {
+      // For profile picture, use the dedicated function
+      const dataStream = await getProfilePicture(userId);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'Profile picture not found' });
+      }
+
+      // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
+      const path = `./controllers/test/${userId}_profile_pic.jpg`;
+      await pipeline(dataStream, createWriteStream(path));
+      console.log(`Saved profile picture locally at ${path}`);
+
+      // TODO: chaange return from POSTMAN oriented to actually sending the file to the frontend
+      return res.status(200).json({ message: 'File saved successfully' });
+    }
+
+    // Handle unknown file types
+    return res.status(400).json({ message: 'Unsupported file type requested' });
+
+  } catch (error) {
+    console.error('getFile error:', error);
+    res.status(500).json({ message: `Error retrieving file: ${error.message}` });
   }
 };

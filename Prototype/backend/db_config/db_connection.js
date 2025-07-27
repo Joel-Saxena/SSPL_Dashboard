@@ -11,7 +11,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
-// Test connection and print message
+// Top Level IIFE to Check Connection
 (async () => {
   try {
     const connection = await pool.getConnection();
