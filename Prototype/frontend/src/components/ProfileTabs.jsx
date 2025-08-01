@@ -1018,7 +1018,7 @@ function ProfileTabs() {
     <div className="flex justify-end gap-4 mb-4">
       {!editMode.family && (
         <button
-          className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded"
+          className="bg-[#003366] hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded"
           onClick={() => handleEditTab('family')}
         >
           Edit
@@ -1243,14 +1243,14 @@ function ProfileTabs() {
     <div
       className="flex flex-col min-h-screen w-full bg-cover bg-center"
       style={{
-        backgroundImage: 'url("/Bgdrdo.jpeg")',
+        backgroundImage: 'url("/1.png")',
         minHeight: '100vh',
         minWidth: '100vw',
         fontFamily: 'Inter, Roboto, Open Sans, sans-serif',
       }}
     >
       {/* Header (copied from Home.jsx) */}
-      <header className="bg-[#003366] text-white py-4 text-center shadow-md">
+      <header className="bg-[#1b2940] text-white py-4 text-center shadow-md">
         <div className="overflow-hidden whitespace-nowrap">
           <p className="animate-scroll text-3xl font-bold">Welcome to DRDO</p>
         </div>
@@ -1334,7 +1334,7 @@ function ProfileTabs() {
         </div>
       </main>
       {/* Footer (copied from Home.jsx) */}
-      <footer className="bg-blue-900 text-white text-center py-3 text-sm">
+      <footer className="bg-[#1b2940] text-white text-center py-3 text-sm">
         &copy; {new Date().getFullYear()} DRDO. All rights reserved.
       </footer>
 
