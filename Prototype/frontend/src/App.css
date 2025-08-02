@@ -1,6 +1,5 @@
 /* @import "tailwindcss"; */
 @import "react-responsive-carousel/lib/styles/carousel.min.css";
-
 #root {
   max-width: none;
   margin: 0 auto;

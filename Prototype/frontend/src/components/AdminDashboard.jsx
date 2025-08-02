@@ -86,7 +86,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <img src={DRDO_LOGO_URL} alt="DRDO Logo" className="h-10 w-10 rounded-full bg-white border border-blue-100 p-1 shadow" />
             <span className="font-extrabold text-lg lg:text-xl uppercase tracking-wider">
-              Defence Research & Development Organisation
+              DefenCore
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
 
       {/* Footer */}
       <footer className="bg-[#1b2940] text-white text-center py-2 text-xs border-t border-blue-900">
-        &copy; {new Date().getFullYear()} Defence Research & Development Organisation, India. All rights reserved.
+        &copy; {new Date().getFullYear()} DefenCore, India. All rights reserved.
       </footer>
     </div>
   );

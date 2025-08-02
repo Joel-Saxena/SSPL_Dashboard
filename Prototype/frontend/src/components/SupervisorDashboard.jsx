@@ -265,7 +265,7 @@ export default function SupervisorDashboard() {
             </button>
             <img src={DRDO_LOGO_URL} alt="DRDO Logo" className="h-10 w-10 rounded-full bg-white border border-blue-100 p-1 shadow" />
             <span className="font-extrabold text-lg lg:text-xl uppercase tracking-wider">
-              Defence Research & Development Organisation
+              DefenCore
             </span>
           </div>
           <span className="hidden sm:block font-semibold text-xs tracking-wider text-slate-200">
@@ -378,7 +378,7 @@ export default function SupervisorDashboard() {
       </main>
       {/* Footer */}
       <footer className="bg-[#1b2940] text-white text-center py-2 text-xs border-t border-blue-900">
-        &copy; {new Date().getFullYear()} Defence Research & Development Organisation, India. All rights reserved.
+        &copy; {new Date().getFullYear()} DefenCore, India. All rights reserved.
       </footer>
     </div>
   );

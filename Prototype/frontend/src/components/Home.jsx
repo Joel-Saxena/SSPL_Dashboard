@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const DRDO_LOGO_URL = "/DrdoLogo.png"; // Use your actual logo path
+const DEFENCORE_LOGO_URL = "/DrdoLogo.png"; // Use your actual logo path
 
 const Home = () => {
   const [login, setLogin] = useState({ employeeId: "", password: "" });
@@ -54,19 +54,20 @@ const Home = () => {
   };
 
   return (
+    
     <div className="min-h-screen flex flex-col bg-[#e7ecf3]">
       {/* Header */}
       <header className="bg-[#1b2940] text-white shadow-sm">
         <div className="flex items-center justify-between max-w-5xl mx-auto py-3 px-3">
           <div className="flex items-center space-x-3">
-            <img src={DRDO_LOGO_URL}
-                 alt="DRDO Logo"
+            <img src={DEFENCORE_LOGO_URL}
+                 alt="DEFENCORE Logo"
                  className="h-12 w-12 rounded-full border border-blue-100 shadow"
             />
             <span className="font-extrabold tracking-widest text-xl lg:text-2xl uppercase"
                   style={{ letterSpacing: "2.5px", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
             >
-              Defence Research & Development Organisation
+              DefenCore
             </span>
           </div>
           <div className="hidden sm:block font-semibold text-sm tracking-wide text-slate-200">
@@ -82,7 +83,7 @@ const Home = () => {
           {/* Login Card */}
           <section className="w-full md:w-1/2 px-8 py-10 flex flex-col justify-center">
             <h2 className="text-blue-900 text-2xl font-bold mb-2 text-center" style={{ fontFamily: "inherit" }}>
-              <span className="border-b-2 border-blue-800 pb-0.5">DRDO Login</span>
+              <span className="border-b-2 border-blue-800 pb-0.5">DefenCore Login</span>
             </h2>
             <p className="mb-6 text-center text-gray-500 text-sm font-medium">
               Authorized Access Only
@@ -157,7 +158,7 @@ const Home = () => {
           </section>
           {/* Right Info Panel */}
           <aside className="hidden md:flex md:w-1/2 flex-col items-center justify-center bg-gradient-to-tr from-[#1b2940]  to-[#2550A6] text-white p-6">
-            <img src={DRDO_LOGO_URL} alt="DRDO Logo" className="mb-4 h-16 w-16 rounded-full shadow border border-blue-200 bg-white p-1" />
+            <img src={DEFENCORE_LOGO_URL} alt="DEFENCORE Logo" className="mb-4 h-16 w-16 rounded-full shadow border border-blue-200 bg-white p-1" />
             <h3 className="font-bold text-lg text-center mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
               Digital Scientist Portal
             </h3>
@@ -169,10 +170,10 @@ const Home = () => {
           </aside>
         </div>
       </main>
-
+<p style={{ fontSize: '20px', color: 'black' }}><b>NOTE: Use credentials provided in resume to log in as Supervisor or Admin.</b></p>
       {/* Footer */}
       <footer className="bg-[#1b2940] text-white text-center py-2 border-t border-blue-900 text-xs">
-        &copy; {new Date().getFullYear()} Defence Research & Development Organisation, India. All rights reserved.
+        &copy; {new Date().getFullYear()} DefenCore, India. All rights reserved.
       </footer>
     </div>
   );

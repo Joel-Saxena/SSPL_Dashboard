@@ -1252,7 +1252,7 @@ function ProfileTabs() {
       {/* Header (copied from Home.jsx) */}
       <header className="bg-[#1b2940] text-white py-4 text-center shadow-md">
         <div className="overflow-hidden whitespace-nowrap">
-          <p className="animate-scroll text-3xl font-bold">Welcome to DRDO</p>
+          <p className="animate-scroll text-3xl font-bold">Welcome to DefenCore</p>
         </div>
       </header>
 
@@ -1335,7 +1335,7 @@ function ProfileTabs() {
       </main>
       {/* Footer (copied from Home.jsx) */}
       <footer className="bg-[#1b2940] text-white text-center py-3 text-sm">
-        &copy; {new Date().getFullYear()} DRDO. All rights reserved.
+        &copy; {new Date().getFullYear()} DefenCore. All rights reserved.
       </footer>
 
       {/* Custom Scroll Animation (copied from Home.jsx) */}
