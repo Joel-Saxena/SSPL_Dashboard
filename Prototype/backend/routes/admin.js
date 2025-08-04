@@ -1,27 +1,37 @@
-const express = require('express');
+import express from 'express';
+import * as adminController from '../controllers/adminController.js';
+import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+import multer from 'multer';
+
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
+
 const router = express.Router();
-const adminController = require('../controllers/adminController');
-const { authenticate, authorizeRoles } = require('../middlewares/authMiddleware');
 
 // Apply authentication and restrict access to users with the 'admin' role
 // This middleware applies to all routes below this line
 router.use(authenticate, authorizeRoles('admin'));
 
-// ROUTE: Get all scientists in the admin's group
-// GET /api/admin/scientists
+// ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
 router.get('/scientists', adminController.getScientistsInGroup);
 
-// ROUTE: Update a scientist's details (only if they're in the admin's group)
-// PUT /api/admin/scientist/:id
+// ROUTE 2: Update scientist details (PUT /api/admin/scientist/:id)
 router.put('/scientist/:id', adminController.updateScientistDetails);
 
-// ROUTE: Search scientists by name within admin's group
-// GET /api/admin/search?ScientistName=...
+// ROUTE 3: Search scientist by name (GET /api/admin/search)
 router.get('/search', adminController.searchScientistByName);
 
-// ROUTE: Get complete profile of a specific scientist in admin's group
-// GET /api/admin/scientist/:id
+// ROUTE 4: Get complete scientist details (GET /api/admin/scientist/:id)
 router.get('/scientist/:id', adminController.getCompleteScientistDetails);
 
-// Export the router to be used in main app.js or index.js
-module.exports = router;
+// ROUTE 5: upload file (POST /api/admin/upload)
+const uploadMiddleware = upload.fields([{ name: 'profile_pic', maxCount: 1 }, { name: 'document_aadhaar', maxCount: 1 }, { name: 'document_pan', maxCount: 1 }])
+// router.post('/upload', upload.single('profile_pic'), adminController.uploadFile);
+router.post('/upload', uploadMiddleware, adminController.uploadFile);
+
+// ROUTE 6: Get file (GET /api/admin/getfile?emp_id=:id&file_type=:fileType)
+router.get('/getfile', adminController.getFile);
+
+export default router;
+
+

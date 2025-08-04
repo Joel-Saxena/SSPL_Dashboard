@@ -1,7 +1,14 @@
 // Basic Express server setup for DRDO Prototype
-const express = require('express');
+import express from 'express';
+import cors from 'cors';
+import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import supervisorRoutes from './routes/supervisor.js';
+// import path from 'path';
+// import { fileURLToPath } from 'url';
+// import fs from 'fs';
+
 const app = express();
-const cors = require('cors');
 
 // Configure CORS with specific options
 const corsOptions = {
@@ -15,9 +22,9 @@ app.use(cors(corsOptions));  // Apply CORS with configuration
 app.use(express.json());
 
 // Route imports
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/supervisor', require('./routes/supervisor'));
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/supervisor', supervisorRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

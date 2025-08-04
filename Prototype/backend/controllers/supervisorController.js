@@ -1,7 +1,7 @@
-const pool = require('../db_config/db_connection');
+import pool from '../db_config/db_connection.js';
 
-// ROUTE 1: Create a new group (POST /api/supervisor/group)
-exports.createGroup = async (req, res) => {
+// ROUTE 1: Create new group (POST /api/supervisor/group)
+export const createGroup = async (req, res) => {
   const { group_name } = req.body;
 
   // Validate group name
@@ -32,9 +32,13 @@ exports.createGroup = async (req, res) => {
   }
 };
 
-// ROUTE 2: Add a new admin (POST /api/supervisor/admin)
-exports.addAdmin = async (req, res) => {
-  const { employeeData, supervisor_id, group_id } = req.body;
+// ROUTE 2: Add new admin (POST /api/supervisor/admin)
+export const addAdmin = async (req, res) => {
+  const { 
+    employeeData, 
+    supervisor_id, 
+    group_id 
+  } = req.body;
 
   // Validate required fields
   if (!employeeData || !group_id) {
@@ -112,9 +116,15 @@ exports.addAdmin = async (req, res) => {
   }
 };
 
-// ROUTE 3: Add a new scientist (POST /api/supervisor/scientist)
-exports.addScientist = async (req, res) => {
-  const { employeeData, category, research_area, grade, group_id } = req.body;
+// ROUTE 3: Add new scientist (POST /api/supervisor/scientist)
+export const addScientist = async (req, res) => {
+  const { 
+    employeeData,
+    category,
+    research_area,
+    grade,
+    group_id
+  } = req.body;
 
   // Validate required fields
   if (!employeeData || !category || !grade || !group_id) {
@@ -203,8 +213,8 @@ exports.addScientist = async (req, res) => {
   }
 };
 
-// ROUTE 4: Assign an admin to a group (PUT /api/supervisor/admin/group)
-exports.assignAdminToGroup = async (req, res) => {
+// ROUTE 4: Update admin's group (PUT /api/supervisor/admin/group)
+export const assignAdminToGroup = async (req, res) => {
   const { admin_id, group_id } = req.body;
 
   // Validate inputs
@@ -236,8 +246,8 @@ exports.assignAdminToGroup = async (req, res) => {
   }
 };
 
-// ROUTE 5: Get full group hierarchy (GET /api/supervisor/groups)
-exports.getGroupHierarchy = async (req, res) => {
+// ROUTE 5: Get group hierarchy (GET /api/supervisor/groups)
+export const getGroupHierarchy = async (req, res) => {
   try {
     // Step 1: Fetch all groups
     const [groups] = await pool.query('SELECT * FROM `group`');

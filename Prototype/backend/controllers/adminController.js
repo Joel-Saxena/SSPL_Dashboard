@@ -1,7 +1,12 @@
-const pool = require('../db_config/db_connection');
+// Handles all admin functionalities (for scientists in their group only)
+import pool from '../db_config/db_connection.js';
+import { uploadFileToStorage, getFileFromStorage } from './fileupload.js';
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
 
-// ROUTE 1: Get all scientists in the admin's group (GET /api/admin/scientists)
-exports.getScientistsInGroup = async (req, res) => {
+
+// ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
+export const getScientistsInGroup = async (req, res) => {
   try {
     const groupId = req.user.group_id; // Extract group_id from authenticated user's JWT
     const [scientists] = await pool.query(
@@ -18,19 +23,16 @@ exports.getScientistsInGroup = async (req, res) => {
 };
 
 // ROUTE 2: Update scientist details (PUT /api/admin/scientist/:id)
-exports.updateScientistDetails = async (req, res) => {
+export const updateScientistDetails = async (req, res) => {
   try {
     const groupId = req.user.group_id; // Admin's group_id from JWT
     const sciId = req.params.id; // Scientist's employee ID from URL
 
-    // Check if the scientist belongs to this admin's group
-    const [rows] = await pool.query(
-      'SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', 
-      [sciId, groupId]
-    );
+    // Only allow update if scientist is in admin's group
+    const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
     if (rows.length === 0) return res.status(403).json({ message: 'Not authorized' });
 
-    // Extract updatable fields from request body
+    // destructure possible updates
     const {
       firstname, middlename, lastname, gender, aadhaar, education_qualification,
       category, research_area, grade, pay_level, university, subject, date_of_birth,
@@ -40,7 +42,7 @@ exports.updateScientistDetails = async (req, res) => {
 
     let affectedRows = 0;
 
-    // Update EMPLOYEE details if any of the personal fields are present
+    // update employee fields
     if (
       firstname || middlename || lastname || gender || aadhaar || education_qualification ||
       pay_level || university || subject || date_of_birth || date_of_joining || date_of_retirement ||
@@ -73,14 +75,12 @@ exports.updateScientistDetails = async (req, res) => {
       affectedRows += empResult.affectedRows;
     }
 
-    // If GRADE is updated, check its validity against managed grades
+    // If grade is being updated, check if group manages the new grade
     if (grade) {
-      const [[sci]] = await pool.query(
-        'SELECT group_id FROM scientist WHERE emp_id = ?', [sciId]
-      );
-
+      // Get current group_id of the scientist
+      const [[sci]] = await pool.query('SELECT group_id FROM scientist WHERE emp_id = ?', [sciId]);
       if (sci && sci.group_id !== null) {
-        // Check if this grade is allowed for this group
+        // Check if the group manages the new grade
         const [managed] = await pool.query(
           'SELECT * FROM managed_scientist_grade WHERE group_id = ? AND scientist_grade = ?',
           [sci.group_id, grade]
@@ -88,13 +88,14 @@ exports.updateScientistDetails = async (req, res) => {
 
         // If the grade is not managed, unassign the scientist from the group
         if (managed.length === 0) {
+          // Group does not manage new grade, set group_id to NULL
           const [sciResult] = await pool.query(
             'UPDATE scientist SET grade = ?, group_id = NULL, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
             [grade, category, research_area, sciId]
           );
           affectedRows += sciResult.affectedRows;
         } else {
-          // Grade is valid for this group — update without removing group
+          // Group manages new grade, update normally
           const [sciResult] = await pool.query(
             'UPDATE scientist SET grade = ?, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
             [grade, category, research_area, sciId]
@@ -110,7 +111,7 @@ exports.updateScientistDetails = async (req, res) => {
         affectedRows += sciResult.affectedRows;
       }
     } else if (category || research_area) {
-      // If only category or research_area changed
+      // Only category or research_area is being updated
       const [sciResult] = await pool.query(
         'UPDATE scientist SET category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
         [category, research_area, sciId]
@@ -128,8 +129,8 @@ exports.updateScientistDetails = async (req, res) => {
   }
 };
 
-// ROUTE 3: Search scientist by name (GET /api/admin/search?ScientistName=...)
-exports.searchScientistByName = async (req, res) => {
+// ROUTE 3: Search scientist by name (GET /api/admin/search)
+export const searchScientistByName = async (req, res) => {
   try {
     const groupId = req.user.group_id; // Admin's group
     const { ScientistName } = req.query;
@@ -152,19 +153,15 @@ exports.searchScientistByName = async (req, res) => {
   }
 };
 
-// ROUTE 4: Get complete profile of a scientist (GET /api/admin/scientist/:id)
-exports.getCompleteScientistDetails = async (req, res) => {
+// ROUTE 4: Get complete scientist details (GET /api/admin/scientist/:id)
+export const getCompleteScientistDetails = async (req, res) => {
   try {
     const groupId = req.user.group_id;
     const sciId = req.params.id;
 
-    // Check if scientist exists and belongs to the admin's group
-    const [rows] = await pool.query(
-      'SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', 
-      [sciId, groupId]
-    );
-    if (rows.length === 0)
-      return res.status(404).json({ message: 'Scientist not found or not in your group' });
+    // Only allow if scientist is in admin's group
+    const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Scientist not found or not in your group' });
 
     // Fetch personal and scientific info
     const [profileRows] = await pool.query(
@@ -185,5 +182,94 @@ exports.getCompleteScientistDetails = async (req, res) => {
     res.json({ profile: profileRows[0], phones, landlines, history });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching scientist details' });
+  }
+};
+
+// ROUTE 5: upload file (POST /api/admin/upload)
+export const uploadFile = async (req, res) => {
+  try {
+    let uploaded_file_type = null;
+    if(req.files['profile_pic'] !== undefined){
+      uploaded_file_type = 'profile_pic';
+    }
+    else if(req.files['document_aadhaar'] !== undefined){
+      uploaded_file_type = 'document_aadhaar';
+    }
+    else if(req.files['document_pan'] !== undefined){
+      uploaded_file_type = 'document_pan';
+    }
+    else{
+      throw new Error("Unknown File type");
+    }
+    console.log(typeof(uploadFile));
+    console.log(uploadFile);
+
+    const file = req.files[uploaded_file_type][0];
+    const userId = req.body.user_id;
+    if (!file || !userId) {
+      return res.status(400).json({ message: 'File and user ID are required' });
+    }
+    else {
+      const uploadResult = await uploadFileToStorage(file, userId, uploaded_file_type);
+      if (uploadResult) {
+        res.json({ message: 'File uploaded successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to upload file' });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: `Error uploading file: ${error.message}` });
+  }
+}
+
+// ROUTE 6: Get file (GET /api/admin/getfile?emp_id=:id&file_type=:fileType)
+export const getFile = async (req, res) => {
+  try {
+    const userId = req.query.emp_id;
+    const fileType = req.query.file_type;
+
+    if (!userId || !fileType) {
+      return res.status(400).json({ message: 'Employee ID and file type are required' });
+    }
+
+    if (fileType == 'profile_pic') {
+      const dataStream = await getFileFromStorage(userId, fileType);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'Profile picture not found' });
+      }
+
+      // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
+      // const path = `./controllers/test/${userId}_profile_pic.jpg`;
+      // await pipeline(dataStream, createWriteStream(path));
+      // console.log(`Saved profile picture locally at ${path}`);
+
+      res.setHeader('Content-Type', 'image/jpeg');
+      return dataStream.pipe(res);
+    }
+    else if(fileType == 'document_aadhaar'){
+      const dataStream = await getFileFromStorage(userId, fileType);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      return dataStream.pipe(res);
+    }
+    else if(fileType == 'document_pan'){
+      const dataStream = await getFileFromStorage(userId, fileType);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      return dataStream.pipe(res);
+    }
+
+    // Handle unknown file types
+    return res.status(400).json({ message: 'Unsupported file type requested' });
+
+  } catch (error) {
+    console.error('getFile error:', error);
+    res.status(500).json({ message: `Error retrieving file: ${error.message}` });
   }
 };

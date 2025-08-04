@@ -1,8 +1,10 @@
-const jwt = require('jsonwebtoken');
-const pool = require('../db_config/db_connection');
+// Handles login for admin/supervisor
+import jwt from 'jsonwebtoken';
+import pool from '../db_config/db_connection.js';
 
-// Login route for administrators (POST /api/auth/login)
-exports.login = async (req, res) => {
+// ROUTE 1: Login (POST /api/auth/login)
+// Allows admin or scientist to login with emp_id and password
+export const login = async (req, res) => {
   const { emp_id, password } = req.body;
 
   // Validate input fields
@@ -11,24 +13,13 @@ exports.login = async (req, res) => {
   }
 
   try {
-    // Step 1: Authenticate credentials from the employee table
-    const [rows] = await pool.query(
-      'SELECT * FROM employee WHERE id = ? AND password = ?', 
-      [emp_id, password]
-    );
-
-    // If no matching employee found, credentials are invalid
+    // Check if employee exists with given emp_id and password
+    const [rows] = await pool.query('SELECT * FROM employee WHERE id = ? AND password = ?', [emp_id, password]);
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
-    // Step 2: Check if the authenticated user is an administrator
-    const [adminRows] = await pool.query(
-      'SELECT * FROM administrator WHERE id = ?', 
-      [emp_id]
-    );
-
-    // Variables to hold role and group_id (if admin)
+    // Optionally, check if user is admin or scientist
+    const [adminRows] = await pool.query('SELECT * FROM administrator WHERE id = ?', [emp_id]);
     let role = null;
     let group_id = null;
 

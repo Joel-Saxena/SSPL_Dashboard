@@ -1,6 +1,8 @@
 // MySQL connection pool for DRDO Prototype
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -9,7 +11,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
-// Test connection and print message
+// Top Level IIFE to Check Connection
 (async () => {
   try {
     const connection = await pool.getConnection();
@@ -20,4 +22,4 @@ const pool = mysql.createPool({
   }
 })();
 
-module.exports = pool;
+export default pool;

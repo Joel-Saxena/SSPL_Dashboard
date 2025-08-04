@@ -1,7 +1,6 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-// Middleware: Verifies the presence and validity of a JWT token
-const authenticate = (req, res, next) => {
+export const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   // Check if Authorization header is missing or doesn't start with 'Bearer '
@@ -26,8 +25,7 @@ const authenticate = (req, res, next) => {
   }
 };
 
-// Middleware: Checks if the authenticated user has one of the allowed roles
-const authorizeRoles = (...roles) => {
+export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     // Ensure user is authenticated and their role is permitted
     if (!req.user || !roles.includes(req.user.role))
@@ -37,6 +35,3 @@ const authorizeRoles = (...roles) => {
     next();
   };
 };
-
-// Export middleware functions for use in routes
-module.exports = { authenticate, authorizeRoles };

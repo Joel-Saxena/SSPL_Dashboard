@@ -45,6 +45,33 @@ README.md → Project documentation
 
 ---
 
+## 🗒️ Sample .env File
+
+```env
+DB_HOST = 'localhost'
+DB_USER = 'root'
+DB_PASSWORD = 'root'
+DB_NAME = 'sspl_drdo_2'
+JWT_SECRET = 'your_jwt_secret'
+MINIO_ENDPOINT = '192.168.1.4'
+MINIO_API_PORT = 9000
+MINIO_ACCESS_KEY = 'minioadmin'
+MINIO_SECRET_KEY = 'minioadmin'
+MINIO_BUCKET = 'ssplerp'
+```
+
+---
+
+## 🗄️ Start MinIO Object Storage Server
+
+Run the following command (replace `<MinIO-storage-directory>` with your MinIO installation directory):
+
+```
+minio.exe server C:\<MinIO-storage-directory> --console-address :9001
+```
+
+---
+
 ## 🚧 Project Status
 
 **Planning Stage** – Requirements being gathered and architecture being designed. Development to begin soon.
