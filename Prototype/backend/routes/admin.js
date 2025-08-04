@@ -8,6 +8,8 @@ const upload = multer({ storage: storage })
 
 const router = express.Router();
 
+// Apply authentication and restrict access to users with the 'admin' role
+// This middleware applies to all routes below this line
 router.use(authenticate, authorizeRoles('admin'));
 
 // ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)

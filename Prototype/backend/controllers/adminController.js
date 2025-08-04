@@ -8,13 +8,15 @@ import { createWriteStream } from 'fs';
 // ROUTE 1: Get all scientists in admin's group (GET /api/admin/scientists)
 export const getScientistsInGroup = async (req, res) => {
   try {
-    const groupId = req.user.group_id;
+    const groupId = req.user.group_id; // Extract group_id from authenticated user's JWT
     const [scientists] = await pool.query(
       `SELECT s.emp_id, e.firstname, e.lastname, s.grade, s.category, s.research_area
-       FROM scientist s JOIN employee e ON s.emp_id = e.id WHERE s.group_id = ?`,
+       FROM scientist s 
+       JOIN employee e ON s.emp_id = e.id 
+       WHERE s.group_id = ?`,
       [groupId]
     );
-    res.json(scientists);
+    res.json(scientists); // Return list of scientists in the admin's group
   } catch (err) {
     res.status(500).json({ message: 'Error fetching scientists' });
   }
@@ -23,8 +25,8 @@ export const getScientistsInGroup = async (req, res) => {
 // ROUTE 2: Update scientist details (PUT /api/admin/scientist/:id)
 export const updateScientistDetails = async (req, res) => {
   try {
-    const groupId = req.user.group_id;
-    const sciId = req.params.id;
+    const groupId = req.user.group_id; // Admin's group_id from JWT
+    const sciId = req.params.id; // Scientist's employee ID from URL
 
     // Only allow update if scientist is in admin's group
     const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
@@ -83,6 +85,8 @@ export const updateScientistDetails = async (req, res) => {
           'SELECT * FROM managed_scientist_grade WHERE group_id = ? AND scientist_grade = ?',
           [sci.group_id, grade]
         );
+
+        // If the grade is not managed, unassign the scientist from the group
         if (managed.length === 0) {
           // Group does not manage new grade, set group_id to NULL
           const [sciResult] = await pool.query(
@@ -99,7 +103,7 @@ export const updateScientistDetails = async (req, res) => {
           affectedRows += sciResult.affectedRows;
         }
       } else {
-        // No group assigned, just update
+        // No group associated, just update grade/category/research area
         const [sciResult] = await pool.query(
           'UPDATE scientist SET grade = ?, category = COALESCE(?, category), research_area = COALESCE(?, research_area) WHERE emp_id = ?',
           [grade, category, research_area, sciId]
@@ -128,16 +132,21 @@ export const updateScientistDetails = async (req, res) => {
 // ROUTE 3: Search scientist by name (GET /api/admin/search)
 export const searchScientistByName = async (req, res) => {
   try {
-    const groupId = req.user.group_id;
+    const groupId = req.user.group_id; // Admin's group
     const { ScientistName } = req.query;
-    if (!ScientistName) return res.status(400).json({ message: 'Name is required' });
 
+    if (!ScientistName)
+      return res.status(400).json({ message: 'Name is required' });
+
+    // Search by first or last name (case-insensitive, partial match)
     const [scientists] = await pool.query(
       `SELECT s.emp_id, e.firstname, e.lastname, s.grade, s.category, s.research_area
-       FROM scientist s JOIN employee e ON s.emp_id = e.id
+       FROM scientist s 
+       JOIN employee e ON s.emp_id = e.id
        WHERE s.group_id = ? AND (e.firstname LIKE ? OR e.lastname LIKE ?)`,
       [groupId, `%${ScientistName}%`, `%${ScientistName}%`]
     );
+
     res.json(scientists);
   } catch (err) {
     res.status(500).json({ message: 'Error searching scientist' });
@@ -154,13 +163,20 @@ export const getCompleteScientistDetails = async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM scientist WHERE emp_id = ? AND group_id = ?', [sciId, groupId]);
     if (rows.length === 0) return res.status(404).json({ message: 'Scientist not found or not in your group' });
 
+    // Fetch personal and scientific info
     const [profileRows] = await pool.query(
       `SELECT e.*, s.category, s.research_area, s.grade, s.group_id
-       FROM employee e JOIN scientist s ON e.id = s.emp_id WHERE s.emp_id = ?`,
-      [sciId]
+       FROM employee e 
+       JOIN scientist s ON e.id = s.emp_id 
+       WHERE s.emp_id = ? AND s.group_id = ?`,
+      [sciId, groupId]
     );
+
+    // Fetch all associated phone numbers
     const [phones] = await pool.query('SELECT phone_no FROM phone_number WHERE emp_id = ?', [sciId]);
     const [landlines] = await pool.query('SELECT landline_no FROM landline_number WHERE emp_id = ?', [sciId]);
+
+    // Fetch scientist’s grade/history records
     const [history] = await pool.query('SELECT * FROM history WHERE sci_id = ?', [sciId]);
 
     res.json({ profile: profileRows[0], phones, landlines, history });

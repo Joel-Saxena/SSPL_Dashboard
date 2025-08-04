@@ -4,6 +4,7 @@ import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+// Apply authentication and ensure only users with 'super_admin' role can access these routes
 router.use(authenticate, authorizeRoles('super_admin'));
 
 // ROUTE 1: Create new group (POST /api/supervisor/group)

@@ -3,18 +3,25 @@ import pool from '../db_config/db_connection.js';
 // ROUTE 1: Create new group (POST /api/supervisor/group)
 export const createGroup = async (req, res) => {
   const { group_name } = req.body;
+
+  // Validate group name
   if (!group_name) {
     return res.status(400).json({ error: "Group name is required" });
   }
 
   try {
+    // Insert new group into the `group` table
     const [result] = await pool.query(
       'INSERT INTO `group` (group_name) VALUES (?)',
       [group_name]
     );
+
+    // Check if insertion was successful
     if (!result.insertId) {
       return res.status(500).json({ error: "Group creation failed" });
     }
+
+    // Respond with created group details
     res.status(201).json({
       message: "Group created successfully",
       group: { group_id: result.insertId, group_name }
@@ -33,38 +40,23 @@ export const addAdmin = async (req, res) => {
     group_id 
   } = req.body;
 
+  // Validate required fields
   if (!employeeData || !group_id) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
+  // Use manual transaction for consistency
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // Create employee
+    // Step 1: Insert admin's details into the employee table
     const empQuery = `
       INSERT INTO employee (
-        password,
-        firstname,
-        middlename,
-        lastname,
-        email,
-        gender,
-        cadre,
-        pay_level,
-        category,
-        education_qualification,
-        university,
-        subject,
-        date_of_birth,
-        aadhaar,
-        pan_number,
-        pis_pin_number,
-        date_of_joining,
-        date_of_retirement,
-        date_in_present_designation,
-        address1_permanent,
-        address2_temporary
+        password, firstname, middlename, lastname, email, gender, cadre, pay_level,
+        category, education_qualification, university, subject, date_of_birth,
+        aadhaar, pan_number, pis_pin_number, date_of_joining, date_of_retirement,
+        date_in_present_designation, address1_permanent, address2_temporary
       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
     const empValues = [
@@ -91,12 +83,12 @@ export const addAdmin = async (req, res) => {
       employeeData.address2_temporary || null
     ];
     const [empResult] = await connection.query(empQuery, empValues);
-    if (!empResult.insertId) {
-      throw new Error("Employee creation failed");
-    }
+
+    if (!empResult.insertId) throw new Error("Employee creation failed");
+
     const empId = empResult.insertId;
 
-    // Create administrator
+    // Step 2: Register employee as admin in administrator table
     const adminQuery = `
       INSERT INTO administrator (id, supervisor_id, group_id)
       VALUES (?, ?, ?)
@@ -106,11 +98,11 @@ export const addAdmin = async (req, res) => {
       supervisor_id || null,
       group_id
     ]);
-    if (!adminResult.affectedRows) {
-      throw new Error("Administrator creation failed");
-    }
+
+    if (!adminResult.affectedRows) throw new Error("Administrator creation failed");
 
     await connection.commit();
+
     res.status(201).json({
       message: "Admin added successfully",
       admin: { id: empId, supervisor_id, group_id }
@@ -118,9 +110,7 @@ export const addAdmin = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error(error.message);
-    res.status(500).json({ 
-      error: error.message || "Server error" 
-    });
+    res.status(500).json({ error: error.message || "Server error" });
   } finally {
     connection.release();
   }
@@ -136,6 +126,7 @@ export const addScientist = async (req, res) => {
     group_id
   } = req.body;
 
+  // Validate required fields
   if (!employeeData || !category || !grade || !group_id) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -144,30 +135,13 @@ export const addScientist = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // Create employee
+    // Step 1: Insert scientist's data into employee table
     const empQuery = `
       INSERT INTO employee (
-        password,
-        firstname,
-        middlename,
-        lastname,
-        email,
-        gender,
-        cadre,
-        pay_level,
-        category,
-        education_qualification,
-        university,
-        subject,
-        date_of_birth,
-        aadhaar,
-        pan_number,
-        pis_pin_number,
-        date_of_joining,
-        date_of_retirement,
-        date_in_present_designation,
-        address1_permanent,
-        address2_temporary
+        password, firstname, middlename, lastname, email, gender, cadre, pay_level,
+        category, education_qualification, university, subject, date_of_birth,
+        aadhaar, pan_number, pis_pin_number, date_of_joining, date_of_retirement,
+        date_in_present_designation, address1_permanent, address2_temporary
       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
     const empValues = [
@@ -194,12 +168,11 @@ export const addScientist = async (req, res) => {
       employeeData.address2_temporary || null
     ];
     const [empResult] = await connection.query(empQuery, empValues);
-    if (!empResult.insertId) {
-      throw new Error("Employee creation failed");
-    }
+    if (!empResult.insertId) throw new Error("Employee creation failed");
+
     const empId = empResult.insertId;
 
-    // Create scientist
+    // Step 2: Add entry into scientist table
     const sciQuery = `
       INSERT INTO scientist (emp_id, category, research_area, grade, group_id)
       VALUES (?, ?, ?, ?, ?)
@@ -211,16 +184,15 @@ export const addScientist = async (req, res) => {
       grade,
       group_id
     ]);
-    if (!sciResult.affectedRows) {
-      throw new Error("Scientist creation failed");
-    }
+    if (!sciResult.affectedRows) throw new Error("Scientist creation failed");
 
-    // Ensure the grade is managed by the group
+    // Step 3: Ensure grade is registered for this group
     const [gradeRows] = await connection.query(
       `SELECT 1 FROM managed_scientist_grade WHERE group_id = ? AND scientist_grade = ?`,
       [group_id, grade]
     );
     if (gradeRows.length === 0) {
+      // Register the grade for this group
       await connection.query(
         `INSERT INTO managed_scientist_grade (group_id, scientist_grade) VALUES (?, ?)`,
         [group_id, grade]
@@ -235,9 +207,7 @@ export const addScientist = async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error(error.message);
-    res.status(500).json({ 
-      error: error.message || "Server error" 
-    });
+    res.status(500).json({ error: error.message || "Server error" });
   } finally {
     connection.release();
   }
@@ -246,11 +216,14 @@ export const addScientist = async (req, res) => {
 // ROUTE 4: Update admin's group (PUT /api/supervisor/admin/group)
 export const assignAdminToGroup = async (req, res) => {
   const { admin_id, group_id } = req.body;
+
+  // Validate inputs
   if (!admin_id || !group_id) {
     return res.status(400).json({ error: "Admin ID and Group ID are required" });
   }
 
   try {
+    // Update group assignment in administrator table
     const [result] = await pool.query(
       `UPDATE administrator 
        SET group_id = ? 
@@ -258,6 +231,7 @@ export const assignAdminToGroup = async (req, res) => {
       [group_id, admin_id]
     );
 
+    // If no rows affected, admin ID is likely invalid
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Admin not found or update failed" });
     }
@@ -275,42 +249,39 @@ export const assignAdminToGroup = async (req, res) => {
 // ROUTE 5: Get group hierarchy (GET /api/supervisor/groups)
 export const getGroupHierarchy = async (req, res) => {
   try {
-    // Get all groups
+    // Step 1: Fetch all groups
     const [groups] = await pool.query('SELECT * FROM `group`');
     if (groups.length === 0) {
       return res.status(404).json({ error: "No groups found" });
     }
 
-    // Get administrators for each group
+    // Step 2: Fetch all admins
     const [admins] = await pool.query(`
       SELECT a.id, a.group_id, e.firstname, e.lastname, a.supervisor_id
       FROM administrator a
       JOIN employee e ON a.id = e.id
     `);
 
-    // Get scientists for each group
+    // Step 3: Fetch all scientists
     const [scientists] = await pool.query(`
       SELECT s.emp_id, s.group_id, e.firstname, e.lastname, s.grade
       FROM scientist s
       JOIN employee e ON s.emp_id = e.id
     `);
 
-    // Get managed grades for each group
+    // Step 4: Fetch all managed grades
     const [grades] = await pool.query('SELECT * FROM managed_scientist_grade');
 
-    // Build hierarchy structure
+    // Step 5: Build nested structure with related admins, scientists, grades
     const hierarchy = groups.map(group => ({
       group_id: group.group_id,
       group_name: group.group_name,
       managed_grades: grades
         .filter(g => g.group_id === group.group_id)
         .map(g => g.scientist_grade),
-      administrators: admins
-        .filter(a => a.group_id === group.group_id),
-      scientists: scientists
-        .filter(s => s.group_id === group.group_id)
+      administrators: admins.filter(a => a.group_id === group.group_id),
+      scientists: scientists.filter(s => s.group_id === group.group_id)
     }));
-
     res.json({ hierarchy });
   } catch (error) {
     console.error(error.message);
