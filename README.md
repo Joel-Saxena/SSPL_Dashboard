@@ -67,7 +67,7 @@ MINIO_BUCKET = 'ssplerp'
 Run the following command (replace `<MinIO-storage-directory>` with your MinIO installation directory):
 
 ```
-C:\<MinIO-storage-directory> --console-address :9001
+minio.exe server C:\<MinIO-storage-directory> --console-address :9001
 ```
 
 ---
