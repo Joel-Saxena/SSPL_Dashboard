@@ -1,6 +1,6 @@
 // Handles all admin functionalities (for scientists in their group only)
 import pool from '../db_config/db_connection.js';
-import { uploadProfilePicture, getProfilePicture } from './fileupload.js';
+import { uploadFileToStorage, getFileFromStorage } from './fileupload.js';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 
@@ -172,13 +172,29 @@ export const getCompleteScientistDetails = async (req, res) => {
 // ROUTE 5: upload file (POST /api/admin/upload)
 export const uploadFile = async (req, res) => {
   try {
-    const file = req.file;
+    let uploaded_file_type = null;
+    if(req.files['profile_pic'] !== undefined){
+      uploaded_file_type = 'profile_pic';
+    }
+    else if(req.files['document_aadhaar'] !== undefined){
+      uploaded_file_type = 'document_aadhaar';
+    }
+    else if(req.files['document_pan'] !== undefined){
+      uploaded_file_type = 'document_pan';
+    }
+    else{
+      throw new Error("Unknown File type");
+    }
+    console.log(typeof(uploadFile));
+    console.log(uploadFile);
+
+    const file = req.files[uploaded_file_type][0];
     const userId = req.body.user_id;
     if (!file || !userId) {
       return res.status(400).json({ message: 'File and user ID are required' });
     }
     else {
-      const uploadResult = await uploadProfilePicture(file, userId);
+      const uploadResult = await uploadFileToStorage(file, userId, uploaded_file_type);
       if (uploadResult) {
         res.json({ message: 'File uploaded successfully' });
       } else {
@@ -197,13 +213,11 @@ export const getFile = async (req, res) => {
     const fileType = req.query.file_type;
 
     if (!userId || !fileType) {
-      console.log("RETURNING ERROR 2 TO FRONTEND");
       return res.status(400).json({ message: 'Employee ID and file type are required' });
     }
 
     if (fileType == 'profile_pic') {
-      // For profile picture, use the dedicated function
-      const dataStream = await getProfilePicture(userId);
+      const dataStream = await getFileFromStorage(userId, fileType);
       if (!dataStream) {
         return res.status(404).json({ message: 'Profile picture not found' });
       }
@@ -213,14 +227,29 @@ export const getFile = async (req, res) => {
       // await pipeline(dataStream, createWriteStream(path));
       // console.log(`Saved profile picture locally at ${path}`);
 
-      // return res.status(200).json({ message: 'File saved successfully' });
       res.setHeader('Content-Type', 'image/jpeg');
-      console.log("RETURNING IMAGE TO FRONTEND");
+      return dataStream.pipe(res);
+    }
+    else if(fileType == 'document_aadhaar'){
+      const dataStream = await getFileFromStorage(userId, fileType);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      return dataStream.pipe(res);
+    }
+    else if(fileType == 'document_pan'){
+      const dataStream = await getFileFromStorage(userId, fileType);
+      if (!dataStream) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
       return dataStream.pipe(res);
     }
 
     // Handle unknown file types
-    console.log("RETURNING ERROR 2 TO FRONTEND");
     return res.status(400).json({ message: 'Unsupported file type requested' });
 
   } catch (error) {

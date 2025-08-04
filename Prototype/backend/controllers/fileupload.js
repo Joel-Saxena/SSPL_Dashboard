@@ -19,14 +19,33 @@ const minioClient = new Minio.Client({
     }
 })();
 
-// Function to upload profile picture
-export async function uploadProfilePicture(file, userId) {
+export async function uploadFileToStorage(file, userId, uploaded_file_type) {
     return new Promise((resolve, reject) => { 
-        const metaData = {
+        
+        let metaData = null;
+        if (uploaded_file_type === 'profile_pic') {
+            metaData = {
             'Content-Type': 'image/jpeg',
             'Additional-Metadata': 'profile-picture',
+            };
+        } else if (uploaded_file_type === 'document_aadhaar') {
+            metaData = {
+            'Content-Type': 'application/pdf',
+            'Additional-Metadata': 'document-aadhaar',
+            };
+        } else if (uploaded_file_type === 'document_pan') {
+            metaData = {
+            'Content-Type': 'application/pdf',
+            'Additional-Metadata': 'document-pan',
+            };
+        } else {
+            console.error('Error uploading profile picture: Invalid file type');
+            resolve(false);
+            return;
         }
-        minioClient.putObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`, file.buffer, metaData, (err, objInfo) => {
+        
+
+        minioClient.putObject(process.env.MINIO_BUCKET, `${userId}/${uploaded_file_type}`, file.buffer, metaData, (err, objInfo) => {
             if (err) {
                 console.error('Error uploading profile picture:', err)
                 resolve(false);
@@ -35,7 +54,7 @@ export async function uploadProfilePicture(file, userId) {
             resolve(true);
         })
         
-        // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
+        // For testing: Save profile pic to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
         // const path = `./controllers/test/${userId}_profile_pic.jpg`;
         // await writeFile(path, file.buffer);
         // console.log(`Saved profile picture locally at ${path}`);
@@ -44,9 +63,9 @@ export async function uploadProfilePicture(file, userId) {
 }
 
 // Function to retrieve profile picture
-export async function getProfilePicture(userId) {
+export async function getFileFromStorage(userId, fileType) {
     let size = 0;
-    const dataStream = await minioClient.getObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`)
+    const dataStream = await minioClient.getObject(process.env.MINIO_BUCKET, `${userId}/${fileType}`)
     dataStream.on('data', function (chunk) {
         size += chunk.length;
     })

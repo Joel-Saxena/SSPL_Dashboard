@@ -23,7 +23,9 @@ router.get('/search', adminController.searchScientistByName);
 router.get('/scientist/:id', adminController.getCompleteScientistDetails);
 
 // ROUTE 5: upload file (POST /api/admin/upload)
-router.post('/upload', upload.single('profile_pic'), adminController.uploadFile);
+const uploadMiddleware = upload.fields([{ name: 'profile_pic', maxCount: 1 }, { name: 'document_aadhaar', maxCount: 1 }, { name: 'document_pan', maxCount: 1 }])
+// router.post('/upload', upload.single('profile_pic'), adminController.uploadFile);
+router.post('/upload', uploadMiddleware, adminController.uploadFile);
 
 // ROUTE 6: Get file (GET /api/admin/getfile?emp_id=:id&file_type=:fileType)
 router.get('/getfile', adminController.getFile);

@@ -107,28 +107,30 @@ const DOCUMENT_CATEGORIES = [
       { key: 'pan', label: 'PAN Card', required: true },
     ],
   },
-  {
-    category: 'Educational Qualification Certificates',
-    docs: [
-      { key: 'marksheets', label: '10th / 12th Marksheets', required: true },
-      { key: 'degrees', label: 'Graduation / Post Graduation Degrees', required: true },
-    ],
-  },
-  {
-    category: 'Employment & Service Docs',
-    docs: [
-      { key: 'promotion_orders', label: 'Promotion Orders', required: true },
-      { key: 'transfer_orders', label: 'Transfer Orders', required: true },
-    ],
-  },
-  {
-    category: 'Pension & Finance',
-    docs: [
-      { key: 'nps_gpf', label: 'NPS/GPF Statement', required: true },
-      { key: 'bank_passbook', label: 'Bank Passbook Copy / Cancelled Cheque', required: true },
-      { key: 'nomination_form', label: 'Nomination Form for Pension/GPF', required: true },
-    ],
-  },
+
+  //Will add as needed 
+  // {
+  //   category: 'Educational Qualification Certificates',
+  //   docs: [
+  //     { key: 'marksheets', label: '10th / 12th Marksheets', required: true },
+  //     { key: 'degrees', label: 'Graduation / Post Graduation Degrees', required: true },
+  //   ],
+  // },
+  // {
+  //   category: 'Employment & Service Docs',
+  //   docs: [
+  //     { key: 'promotion_orders', label: 'Promotion Orders', required: true },
+  //     { key: 'transfer_orders', label: 'Transfer Orders', required: true },
+  //   ],
+  // },
+  // {
+  //   category: 'Pension & Finance',
+  //   docs: [
+  //     { key: 'nps_gpf', label: 'NPS/GPF Statement', required: true },
+  //     { key: 'bank_passbook', label: 'Bank Passbook Copy / Cancelled Cheque', required: true },
+  //     { key: 'nomination_form', label: 'Nomination Form for Pension/GPF', required: true },
+  //   ],
+  // },
 ];
 
 const CustomDateInput = React.forwardRef(({ value, onClick, placeholder }, ref) => (
@@ -164,7 +166,6 @@ function ProfileTabs() {
   const navigate = useNavigate();
 
   const empId = searchParams.get('emp_id');
-  console.log("EMPLOYEE ID:" + empId);
 
   // Sync group_id from URL to localStorage if present
   useEffect(() => {
@@ -219,19 +220,69 @@ function ProfileTabs() {
               dateCurrentDesig: profile.date_in_present_designation || '',
             });
 
+            // Fetch profile picture if exists
             axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=profile_pic`, {
               headers: {
-                Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`
               },
               responseType: 'blob'
             })
               .then(res => {
-                console.log("Blob type:", res.data.type);
-                const url = URL.createObjectURL(res.data);
-                setProfilePicUrl(url);
-                console.log("HERE1:" + url);
-                console.log(res.data.size);
+              if (res.data && res.data.size > 0 && res.data.type.startsWith("image/")) {
+                setProfilePicUrl((prevURL) => {
+                URL.revokeObjectURL(prevURL);
+                return URL.createObjectURL(res.data);
+                });
+              }
+              })
+              .catch(err => {
+              // It's okay if not found, just skip
+              console.log("No profile picture found for this user.");
               });
+
+            // Fetch Aadhaar document if exists
+            axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=document_aadhaar`, {
+              headers: {
+              Authorization: `Bearer ${token}`
+              },
+              responseType: 'blob'
+            })
+              .then(res => {
+              if (res.data && res.data.size > 0 && res.data.type === "application/pdf") {
+                const file = new File([res.data], "aadhaar.pdf", { type: "application/pdf" });
+                setDocFiles(prev => ({
+                ...prev,
+                aadhaar: { file, name: "aadhaar.pdf" }
+                }));
+              }
+              })
+              .catch(err => {
+              // It's okay if not found, just skip
+              console.log("No Aadhaar document found for this user.");
+              });
+
+            // Fetch PAN document if exists
+            axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=document_pan`, {
+              headers: {
+              Authorization: `Bearer ${token}`
+              },
+              responseType: 'blob'
+            })
+              .then(res => {
+              if (res.data && res.data.size > 0 && res.data.type === "application/pdf") {
+                const file = new File([res.data], "pan.pdf", { type: "application/pdf" });
+                setDocFiles(prev => ({
+                ...prev,
+                pan: { file, name: "pan.pdf" }
+                }));
+              }
+              })
+              .catch(err => {
+              // It's okay if not found, just skip
+              console.log("No PAN document found for this user.");
+              });
+
+
 
           } catch (err) {
             if (err.response && (err.response.status === 403 || err.response.status === 404)) {
@@ -239,8 +290,7 @@ function ProfileTabs() {
               alert('Access denied: This scientist is not in your group.');
               navigate('/AdminDashboard');
             } else {
-              console.log("HERE2:" + err);
-              // console.error('Error fetching profile:', err);
+              console.error('Error fetching profile:', err);
               setError('Failed to load profile.');
               alert('Unexpected error occurred while loading profile.');
             }
@@ -330,110 +380,6 @@ function ProfileTabs() {
     documents: {}
   });
 
-  // Add Scientist Modal State
-  //   useEffect(() => {
-  //     const fetchUserData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const token = localStorage.getItem('token');
-  //     if (!token) {
-  //       setError('Authentication token not found. Please login again.');
-  //       return;
-  //     }
-  //     if (empId) {
-  //       const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`
-  //         }
-  //       });
-
-  //       const { profile } = response.data;
-
-  //       setPersonal({
-  //         firstName: profile.firstname || '',
-  //         middleName: profile.middlename || '',
-  //         lastName: profile.lastname || '',
-  //         gender: profile.gender || '',
-  //         dob: profile.date_of_birth || '',
-  //         aadhaar: profile.aadhaar || '',
-  //         pan: profile.pan_number || '',
-  //         pisPin: profile.pis_pin_number || '',
-  //         email: profile.email || '',
-  //         payLevel: profile.pay_level || '',
-  //         category: profile.category || '',
-  //         educationQualification: profile.education_qualification || '',
-  //         university: profile.university || '',
-  //         subject: profile.subject || '',
-  //         permAddress: profile.address1_permanent || '',
-  //         tempAddress: profile.address2_temporary || '',
-  //       });
-
-  //       setService({
-  //         designation: '',
-  //         subDesignation: '',
-  //         payLevel: profile.pay_level || '',
-  //         group: profile.groupId || '',
-  //         supervisor: '',
-  //         dateOfJoining: profile.date_of_joining || '',
-  //         dateOfRetirement: profile.date_of_retirement || '',
-  //         dateCurrentDesig: profile.date_in_present_designation || '',
-  //       });
-
-  //     } else {
-  //       const userData = JSON.parse(localStorage.getItem('user'));
-  //       const localGroupId = localStorage.getItem('group_id');
-
-  //       if (!userData || !userData.id) {
-  //         setError('User not found. Please login again.');
-  //         return;
-  //       }
-
-  //       setPersonal({
-  //         firstName: userData.firstname || '',
-  //         middleName: userData.middlename || '',
-  //         lastName: userData.lastname || '',
-  //         gender: userData.gender || '',
-  //         dob: userData.date_of_birth || '',
-  //         aadhaar: userData.aadhaar || '',
-  //         pan: userData.pan_number || '',
-  //         pisPin: userData.pis_pin_number || '',
-  //         email: userData.email || '',
-  //         payLevel: userData.pay_level || '',
-  //         category: userData.category || '',
-  //         educationQualification: userData.education_qualification || '',
-  //         university: userData.university || '',
-  //         subject: userData.subject || '',
-  //         permAddress: userData.address1_permanent || '',
-  //         tempAddress: userData.address2_temporary || '',
-  //       });
-
-  //       setService({
-  //         designation: '',
-  //         subDesignation: '',
-  //         payLevel: userData.pay_level || '',
-  //         group: localGroupId || '',
-  //         supervisor: '',
-  //         dateOfJoining: userData.date_of_joining || '',
-  //         dateOfRetirement: userData.date_of_retirement || '',
-  //         dateCurrentDesig: userData.date_in_present_designation || '',
-  //       });
-  //     }
-  //   } catch (err) {
-  //     if (err.response && (err.response.status === 403 || err.response.status === 404)) {
-  //       setError('Scientist not found or you do not have access.');
-  //     } else {
-  //       console.error('Unexpected error fetching user data:', err);
-  //       setError('Failed to load user data.');
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
-  //     fetchUserData();
-  //   }, [empId]);
-
   // --- Handlers ---
 
   const handlePersonalChange = e => {
@@ -472,11 +418,38 @@ function ProfileTabs() {
     setFamily(prev => ({ ...prev, emergency: { ...prev.emergency, [name]: value } }));
   };
   const handleDocFileChangeStructured = (key, e) => {
+    // Right now "key" can be "aadhaar" or "pan".
+
     const file = e.target.files[0];
     if (file) {
-      setDocFiles(prev => ({ ...prev, [key]: { file, name: file.name } }));
+      let uploaded_file_type = null;
+      if (key === 'aadhaar') {
+        uploaded_file_type = "document_aadhaar";
+        console.log("HERE: " + uploaded_file_type);
+      }
+      else if (key === "pan") {
+        uploaded_file_type = "document_pan";
+      }
+
+      const formData = new FormData();
+      formData.append(uploaded_file_type, file);
+      formData.append('user_id', empId);
+
+      const token = localStorage.getItem('token');
+      axios.post('http://localhost:5000/api/admin/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        }
+      }).then(response => {
+        console.log('File uploaded successfully:', response.data);
+        setDocFiles(prev => ({ ...prev, [key]: { file, name: file.name } }));
+      }).catch(error => {
+        console.error('Error uploading Files:', error);
+      });
     }
   };
+
   const handleDeleteDocStructured = key => {
     setDocFiles(prev => {
       const newDocs = { ...prev };
@@ -507,7 +480,6 @@ function ProfileTabs() {
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfilePicUrl(URL.createObjectURL(file));
       const formData = new FormData();
       formData.append('profile_pic', file);
       formData.append('user_id', empId);
@@ -520,6 +492,10 @@ function ProfileTabs() {
         }
       }).then(response => {
         console.log('Profile picture uploaded successfully:', response.data);
+        setProfilePicUrl((prevURL) => {
+          URL.revokeObjectURL(prevURL);
+          return URL.createObjectURL(file);
+        });
       }).catch(error => {
         console.error('Error uploading profile picture:', error);
       });
@@ -1248,7 +1224,7 @@ function ProfileTabs() {
                 </label>
                 <input
                   type="file"
-                  accept=".pdf,image/*"
+                  accept=".pdf"
                   onChange={e => handleDocFileChangeStructured(doc.key, e)}
                   className="input flex-1"
                 />
