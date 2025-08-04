@@ -1326,7 +1326,7 @@ function ProfileTabs() {
       </nav>
       {/* Tab Content */}
       <main className="flex-grow flex items-center justify-center px-4 py-10 w-full h-full">
-        <div className="bg-black bg-opacity-90 backdrop-blur-md rounded-xl shadow-2xl w-full md:w-3/4 p-6 mb-6">
+        <div className="bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-2xl w-full md:w-3/4 p-6 mb-6">
           {loading && <p>Loading profile...</p>}
           {error && <p style={{ color: 'red' }}>{error.message}</p>}
           {!loading && !error && (
