@@ -197,6 +197,7 @@ export const getFile = async (req, res) => {
     const fileType = req.query.file_type;
 
     if (!userId || !fileType) {
+      console.log("RETURNING ERROR 2 TO FRONTEND");
       return res.status(400).json({ message: 'Employee ID and file type are required' });
     }
 
@@ -208,15 +209,18 @@ export const getFile = async (req, res) => {
       }
 
       // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
-      const path = `./controllers/test/${userId}_profile_pic.jpg`;
-      await pipeline(dataStream, createWriteStream(path));
-      console.log(`Saved profile picture locally at ${path}`);
+      // const path = `./controllers/test/${userId}_profile_pic.jpg`;
+      // await pipeline(dataStream, createWriteStream(path));
+      // console.log(`Saved profile picture locally at ${path}`);
 
-      // TODO: chaange return from POSTMAN oriented to actually sending the file to the frontend
-      return res.status(200).json({ message: 'File saved successfully' });
+      // return res.status(200).json({ message: 'File saved successfully' });
+      res.setHeader('Content-Type', 'image/jpeg');
+      console.log("RETURNING IMAGE TO FRONTEND");
+      return dataStream.pipe(res);
     }
 
     // Handle unknown file types
+    console.log("RETURNING ERROR 2 TO FRONTEND");
     return res.status(400).json({ message: 'Unsupported file type requested' });
 
   } catch (error) {

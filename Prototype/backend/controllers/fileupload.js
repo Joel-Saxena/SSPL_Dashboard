@@ -21,23 +21,26 @@ const minioClient = new Minio.Client({
 
 // Function to upload profile picture
 export async function uploadProfilePicture(file, userId) {
-    const metaData = {
-        'Content-Type': 'image/jpeg',
-        'Additional-Metadata': 'profile-picture',
-    }
-    minioClient.putObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`, file.buffer, metaData, (err, objInfo) => {
-        if (err) {
-            console.error('Error uploading profile picture:', err)
-            return false
+    return new Promise((resolve, reject) => { 
+        const metaData = {
+            'Content-Type': 'image/jpeg',
+            'Additional-Metadata': 'profile-picture',
         }
-        console.log('Successfully uploaded profile picture:', objInfo)
-        return true
+        minioClient.putObject(process.env.MINIO_BUCKET, `${userId}/profile_pic.jpg`, file.buffer, metaData, (err, objInfo) => {
+            if (err) {
+                console.error('Error uploading profile picture:', err)
+                resolve(false);
+            }
+            console.log('Successfully uploaded profile picture:', objInfo)
+            resolve(true);
+        })
+        
+        // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
+        // const path = `./controllers/test/${userId}_profile_pic.jpg`;
+        // await writeFile(path, file.buffer);
+        // console.log(`Saved profile picture locally at ${path}`);
+        // return true;
     })
-
-    // For testing: Save file to local "./controllers/test" directory as "{userId}_profile_pic.jpg". You have to Manually Create "./controllers/test" directory.
-    // const path = `./controllers/test/${userId}_profile_pic.jpg`;
-    // await writeFile(path, file.buffer);
-    // console.log(`Saved profile picture locally at ${path}`);
 }
 
 // Function to retrieve profile picture

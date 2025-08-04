@@ -162,128 +162,144 @@ const CustomDateInput = React.forwardRef(({ value, onClick, placeholder }, ref) 
 function ProfileTabs() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   const empId = searchParams.get('emp_id');
+  console.log("EMPLOYEE ID:" + empId);
 
   // Sync group_id from URL to localStorage if present
   useEffect(() => {
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Authentication token not found. Please login again.');
-        alert('Authentication token not found. Please login again.');
-        window.location.href = "/";
-        return;
-      }
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication token not found. Please login again.');
+          alert('Authentication token not found. Please login again.');
+          window.location.href = "/";
+          return;
+        }
 
-      if (empId) {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`
+        if (empId) {
+          try {
+            const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+
+            const { profile } = response.data;
+
+            setPersonal({
+              firstName: profile.firstname || '',
+              middleName: profile.middlename || '',
+              lastName: profile.lastname || '',
+              gender: profile.gender || '',
+              dob: profile.date_of_birth || '',
+              aadhaar: profile.aadhaar || '',
+              pan: profile.pan_number || '',
+              pisPin: profile.pis_pin_number || '',
+              email: profile.email || '',
+              payLevel: profile.pay_level || '',
+              category: profile.category || '',
+              educationQualification: profile.education_qualification || '',
+              university: profile.university || '',
+              subject: profile.subject || '',
+              permAddress: profile.address1_permanent || '',
+              tempAddress: profile.address2_temporary || '',
+            });
+
+            setService({
+              designation: '',
+              subDesignation: '',
+              payLevel: profile.pay_level || '',
+              group: profile.groupId || '',
+              supervisor: '',
+              dateOfJoining: profile.date_of_joining || '',
+              dateOfRetirement: profile.date_of_retirement || '',
+              dateCurrentDesig: profile.date_in_present_designation || '',
+            });
+
+            axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=profile_pic`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              },
+              responseType: 'blob'
+            })
+              .then(res => {
+                console.log("Blob type:", res.data.type);
+                const url = URL.createObjectURL(res.data);
+                setProfilePicUrl(url);
+                console.log("HERE1:" + url);
+                console.log(res.data.size);
+              });
+
+          } catch (err) {
+            if (err.response && (err.response.status === 403 || err.response.status === 404)) {
+              setError('Scientist not found or access denied (not in your group).');
+              alert('Access denied: This scientist is not in your group.');
+              navigate('/AdminDashboard');
+            } else {
+              console.log("HERE2:" + err);
+              // console.error('Error fetching profile:', err);
+              setError('Failed to load profile.');
+              alert('Unexpected error occurred while loading profile.');
             }
-          });
+            return;
+          }
 
-          const { profile } = response.data;
+        } else {
+          const userData = JSON.parse(localStorage.getItem('user'));
+          const localGroupId = localStorage.getItem('group_id');
+
+          if (!userData || !userData.id) {
+            setError('User not found. Please login again.');
+            alert('User not found. Please login again.');
+            window.location.href = "/";
+            return;
+          }
 
           setPersonal({
-            firstName: profile.firstname || '',
-            middleName: profile.middlename || '',
-            lastName: profile.lastname || '',
-            gender: profile.gender || '',
-            dob: profile.date_of_birth || '',
-            aadhaar: profile.aadhaar || '',
-            pan: profile.pan_number || '',
-            pisPin: profile.pis_pin_number || '',
-            email: profile.email || '',
-            payLevel: profile.pay_level || '',
-            category: profile.category || '',
-            educationQualification: profile.education_qualification || '',
-            university: profile.university || '',
-            subject: profile.subject || '',
-            permAddress: profile.address1_permanent || '',
-            tempAddress: profile.address2_temporary || '',
+            firstName: userData.firstname || '',
+            middleName: userData.middlename || '',
+            lastName: userData.lastname || '',
+            gender: userData.gender || '',
+            dob: userData.date_of_birth || '',
+            aadhaar: userData.aadhaar || '',
+            pan: userData.pan_number || '',
+            pisPin: userData.pis_pin_number || '',
+            email: userData.email || '',
+            payLevel: userData.pay_level || '',
+            category: userData.category || '',
+            educationQualification: userData.education_qualification || '',
+            university: userData.university || '',
+            subject: userData.subject || '',
+            permAddress: userData.address1_permanent || '',
+            tempAddress: userData.address2_temporary || '',
           });
 
           setService({
             designation: '',
             subDesignation: '',
-            payLevel: profile.pay_level || '',
-            group: profile.groupId || '',
+            payLevel: userData.pay_level || '',
+            group: localGroupId || '',
             supervisor: '',
-            dateOfJoining: profile.date_of_joining || '',
-            dateOfRetirement: profile.date_of_retirement || '',
-            dateCurrentDesig: profile.date_in_present_designation || '',
+            dateOfJoining: userData.date_of_joining || '',
+            dateOfRetirement: userData.date_of_retirement || '',
+            dateCurrentDesig: userData.date_in_present_designation || '',
           });
-
-        } catch (err) {
-          if (err.response && (err.response.status === 403 || err.response.status === 404)) {
-            setError('Scientist not found or access denied (not in your group).');
-            alert('Access denied: This scientist is not in your group.');
-            navigate('/AdminDashboard');
-          } else {
-            console.error('Error fetching profile:', err);
-            setError('Failed to load profile.');
-            alert('Unexpected error occurred while loading profile.');
-          }
-          return;
         }
-
-      } else {
-        const userData = JSON.parse(localStorage.getItem('user'));
-        const localGroupId = localStorage.getItem('group_id');
-
-        if (!userData || !userData.id) {
-          setError('User not found. Please login again.');
-          alert('User not found. Please login again.');
-          window.location.href = "/";
-          return;
-        }
-
-        setPersonal({
-          firstName: userData.firstname || '',
-          middleName: userData.middlename || '',
-          lastName: userData.lastname || '',
-          gender: userData.gender || '',
-          dob: userData.date_of_birth || '',
-          aadhaar: userData.aadhaar || '',
-          pan: userData.pan_number || '',
-          pisPin: userData.pis_pin_number || '',
-          email: userData.email || '',
-          payLevel: userData.pay_level || '',
-          category: userData.category || '',
-          educationQualification: userData.education_qualification || '',
-          university: userData.university || '',
-          subject: userData.subject || '',
-          permAddress: userData.address1_permanent || '',
-          tempAddress: userData.address2_temporary || '',
-        });
-
-        setService({
-          designation: '',
-          subDesignation: '',
-          payLevel: userData.pay_level || '',
-          group: localGroupId || '',
-          supervisor: '',
-          dateOfJoining: userData.date_of_joining || '',
-          dateOfRetirement: userData.date_of_retirement || '',
-          dateCurrentDesig: userData.date_in_present_designation || '',
-        });
+      } catch (err) {
+        console.error('Unexpected error fetching user data:', err);
+        setError('Failed to load user data.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Unexpected error fetching user data:', err);
-      setError('Failed to load user data.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchUserData();
-}, [empId]);
+    fetchUserData();
+  }, [empId]);
 
-  
+
   const [tab, setTab] = useState(0);
   const [personal, setPersonal] = useState(initialPersonal);
   const [service, setService] = useState(initialService);
@@ -297,7 +313,7 @@ function ProfileTabs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   // Edit mode states for each tab
   const [editMode, setEditMode] = useState({
     personal: false,
@@ -305,7 +321,7 @@ function ProfileTabs() {
     family: false,
     documents: false
   });
-  
+
   // Backup data for each tab
   const [backupData, setBackupData] = useState({
     personal: {},
@@ -315,112 +331,111 @@ function ProfileTabs() {
   });
 
   // Add Scientist Modal State
+  //   useEffect(() => {
+  //     const fetchUserData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const token = localStorage.getItem('token');
+  //     if (!token) {
+  //       setError('Authentication token not found. Please login again.');
+  //       return;
+  //     }
+  //     if (empId) {
+  //       const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`
+  //         }
+  //       });
+
+  //       const { profile } = response.data;
+
+  //       setPersonal({
+  //         firstName: profile.firstname || '',
+  //         middleName: profile.middlename || '',
+  //         lastName: profile.lastname || '',
+  //         gender: profile.gender || '',
+  //         dob: profile.date_of_birth || '',
+  //         aadhaar: profile.aadhaar || '',
+  //         pan: profile.pan_number || '',
+  //         pisPin: profile.pis_pin_number || '',
+  //         email: profile.email || '',
+  //         payLevel: profile.pay_level || '',
+  //         category: profile.category || '',
+  //         educationQualification: profile.education_qualification || '',
+  //         university: profile.university || '',
+  //         subject: profile.subject || '',
+  //         permAddress: profile.address1_permanent || '',
+  //         tempAddress: profile.address2_temporary || '',
+  //       });
+
+  //       setService({
+  //         designation: '',
+  //         subDesignation: '',
+  //         payLevel: profile.pay_level || '',
+  //         group: profile.groupId || '',
+  //         supervisor: '',
+  //         dateOfJoining: profile.date_of_joining || '',
+  //         dateOfRetirement: profile.date_of_retirement || '',
+  //         dateCurrentDesig: profile.date_in_present_designation || '',
+  //       });
+
+  //     } else {
+  //       const userData = JSON.parse(localStorage.getItem('user'));
+  //       const localGroupId = localStorage.getItem('group_id');
+
+  //       if (!userData || !userData.id) {
+  //         setError('User not found. Please login again.');
+  //         return;
+  //       }
+
+  //       setPersonal({
+  //         firstName: userData.firstname || '',
+  //         middleName: userData.middlename || '',
+  //         lastName: userData.lastname || '',
+  //         gender: userData.gender || '',
+  //         dob: userData.date_of_birth || '',
+  //         aadhaar: userData.aadhaar || '',
+  //         pan: userData.pan_number || '',
+  //         pisPin: userData.pis_pin_number || '',
+  //         email: userData.email || '',
+  //         payLevel: userData.pay_level || '',
+  //         category: userData.category || '',
+  //         educationQualification: userData.education_qualification || '',
+  //         university: userData.university || '',
+  //         subject: userData.subject || '',
+  //         permAddress: userData.address1_permanent || '',
+  //         tempAddress: userData.address2_temporary || '',
+  //       });
+
+  //       setService({
+  //         designation: '',
+  //         subDesignation: '',
+  //         payLevel: userData.pay_level || '',
+  //         group: localGroupId || '',
+  //         supervisor: '',
+  //         dateOfJoining: userData.date_of_joining || '',
+  //         dateOfRetirement: userData.date_of_retirement || '',
+  //         dateCurrentDesig: userData.date_in_present_designation || '',
+  //       });
+  //     }
+  //   } catch (err) {
+  //     if (err.response && (err.response.status === 403 || err.response.status === 404)) {
+  //       setError('Scientist not found or you do not have access.');
+  //     } else {
+  //       console.error('Unexpected error fetching user data:', err);
+  //       setError('Failed to load user data.');
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-  try {
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Authentication token not found. Please login again.');
-      return;
-    }
-    if (empId) {
-      const response = await axios.get(`http://localhost:5000/api/admin/scientist/${empId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      const { profile } = response.data;
-
-      setPersonal({
-        firstName: profile.firstname || '',
-        middleName: profile.middlename || '',
-        lastName: profile.lastname || '',
-        gender: profile.gender || '',
-        dob: profile.date_of_birth || '',
-        aadhaar: profile.aadhaar || '',
-        pan: profile.pan_number || '',
-        pisPin: profile.pis_pin_number || '',
-        email: profile.email || '',
-        payLevel: profile.pay_level || '',
-        category: profile.category || '',
-        educationQualification: profile.education_qualification || '',
-        university: profile.university || '',
-        subject: profile.subject || '',
-        permAddress: profile.address1_permanent || '',
-        tempAddress: profile.address2_temporary || '',
-      });
-
-      setService({
-        designation: '',
-        subDesignation: '',
-        payLevel: profile.pay_level || '',
-        group: profile.groupId || '',
-        supervisor: '',
-        dateOfJoining: profile.date_of_joining || '',
-        dateOfRetirement: profile.date_of_retirement || '',
-        dateCurrentDesig: profile.date_in_present_designation || '',
-      });
-
-    } else {
-      const userData = JSON.parse(localStorage.getItem('user'));
-      const localGroupId = localStorage.getItem('group_id');
-
-      if (!userData || !userData.id) {
-        setError('User not found. Please login again.');
-        return;
-      }
-
-      setPersonal({
-        firstName: userData.firstname || '',
-        middleName: userData.middlename || '',
-        lastName: userData.lastname || '',
-        gender: userData.gender || '',
-        dob: userData.date_of_birth || '',
-        aadhaar: userData.aadhaar || '',
-        pan: userData.pan_number || '',
-        pisPin: userData.pis_pin_number || '',
-        email: userData.email || '',
-        payLevel: userData.pay_level || '',
-        category: userData.category || '',
-        educationQualification: userData.education_qualification || '',
-        university: userData.university || '',
-        subject: userData.subject || '',
-        permAddress: userData.address1_permanent || '',
-        tempAddress: userData.address2_temporary || '',
-      });
-
-      setService({
-        designation: '',
-        subDesignation: '',
-        payLevel: userData.pay_level || '',
-        group: localGroupId || '',
-        supervisor: '',
-        dateOfJoining: userData.date_of_joining || '',
-        dateOfRetirement: userData.date_of_retirement || '',
-        dateCurrentDesig: userData.date_in_present_designation || '',
-      });
-    }
-  } catch (err) {
-    if (err.response && (err.response.status === 403 || err.response.status === 404)) {
-      setError('Scientist not found or you do not have access.');
-    } else {
-      console.error('Unexpected error fetching user data:', err);
-      setError('Failed to load user data.');
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-    fetchUserData();
-  }, [empId]);
+  //     fetchUserData();
+  //   }, [empId]);
 
   // --- Handlers ---
+
   const handlePersonalChange = e => {
     const { name, value, type, checked } = e.target;
     setPersonal(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -472,9 +487,9 @@ function ProfileTabs() {
   const handleViewDocStructured = key => {
     const doc = docFiles[key];
     if (doc && doc.file) {
-    const url = URL.createObjectURL(doc.file);
-    window.open(url, '_blank');
-    URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(doc.file);
+      window.open(url, '_blank');
+      URL.revokeObjectURL(url);
     }
   };
   const handleDownloadDocStructured = key => {
@@ -488,6 +503,7 @@ function ProfileTabs() {
       URL.revokeObjectURL(url);
     }
   };
+
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -528,22 +544,22 @@ function ProfileTabs() {
     // Backup current data
     setBackupData(prev => ({
       ...prev,
-      [tabName]: tabName === 'personal' ? { ...personal } : 
-                 tabName === 'service' ? { ...service } : 
-                 tabName === 'family' ? { ...family } : 
-                 { ...docFiles }
+      [tabName]: tabName === 'personal' ? { ...personal } :
+        tabName === 'service' ? { ...service } :
+          tabName === 'family' ? { ...family } :
+            { ...docFiles }
     }));
-    
+
     // Enable edit mode
     setEditMode(prev => ({ ...prev, [tabName]: true }));
   };
 
   const handleSaveTab = async (tabName) => {
     const formatDate = (isoDateStr) => {
-  if (!isoDateStr) return '';
-  const date = new Date(isoDateStr);
-  return date.toISOString().split('T')[0]; // returns YYYY-MM-DD
-};
+      if (!isoDateStr) return '';
+      const date = new Date(isoDateStr);
+      return date.toISOString().split('T')[0]; // returns YYYY-MM-DD
+    };
 
     try {
       setLoading(true);
@@ -555,31 +571,31 @@ function ProfileTabs() {
 
       let payload = {};
       if (tabName === 'personal') {
-  payload = {
-    firstname: personal.firstName,
-    middlename: personal.middleName,
-    lastname: personal.lastName,
-    gender: personal.gender,
-    aadhaar: personal.aadhaar,
-    education_qualification: personal.educationQualification,
-    category: personal.category,
-    pay_level: personal.payLevel,
-    university: personal.university,
-    subject: personal.subject,
-    date_of_birth: formatDate(personal.dob),
-    pan_number: personal.pan,
-    pis_pin_number: personal.pisPin,
-    address1_permanent: personal.permAddress,
-    address2_temporary: personal.tempAddress,
-  };
-} else if (tabName === 'service') {
-  payload = {
-    pay_level: service.payLevel,
-    date_of_joining: formatDate(service.dateOfJoining),
-    date_of_retirement: formatDate(service.dateOfRetirement),
-    date_in_present_designation: formatDate(service.dateCurrentDesig),
-  };
-}
+        payload = {
+          firstname: personal.firstName,
+          middlename: personal.middleName,
+          lastname: personal.lastName,
+          gender: personal.gender,
+          aadhaar: personal.aadhaar,
+          education_qualification: personal.educationQualification,
+          category: personal.category,
+          pay_level: personal.payLevel,
+          university: personal.university,
+          subject: personal.subject,
+          date_of_birth: formatDate(personal.dob),
+          pan_number: personal.pan,
+          pis_pin_number: personal.pisPin,
+          address1_permanent: personal.permAddress,
+          address2_temporary: personal.tempAddress,
+        };
+      } else if (tabName === 'service') {
+        payload = {
+          pay_level: service.payLevel,
+          date_of_joining: formatDate(service.dateOfJoining),
+          date_of_retirement: formatDate(service.dateOfRetirement),
+          date_in_present_designation: formatDate(service.dateCurrentDesig),
+        };
+      }
 
       if (tabName === 'personal' || tabName === 'service') {
         const token = localStorage.getItem('token');
@@ -598,10 +614,10 @@ function ProfileTabs() {
       setEditMode(prev => ({ ...prev, [tabName]: false }));
       alert(`${tabName.charAt(0).toUpperCase() + tabName.slice(1)} details saved successfully!`);
     } catch (err) {
-  console.error('Error saving tab data:', err.response?.data || err.message);
-  alert(`Error: ${err.response?.data?.message || err.message}`);
-}
- finally {
+      console.error('Error saving tab data:', err.response?.data || err.message);
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -617,7 +633,7 @@ function ProfileTabs() {
     } else if (tabName === 'documents') {
       setDocFiles(backupData.documents);
     }
-    
+
     // Disable edit mode
     setEditMode(prev => ({ ...prev, [tabName]: false }));
   };
@@ -674,7 +690,7 @@ function ProfileTabs() {
                 htmlFor="profile-pic-upload"
                 className="absolute bottom-2 right-2 bg-[#003366] text-white rounded-full p-3 cursor-pointer shadow-md hover:bg-[#002244] transition flex items-center justify-center"
                 title="Change Picture"
-                style={{fontSize: '1.5rem'}}
+                style={{ fontSize: '1.5rem' }}
               >
                 <FaPlus />
                 <input
@@ -691,49 +707,49 @@ function ProfileTabs() {
             {editMode.personal ? 'Upload Profile Picture' : 'Profile Picture'}
           </span>
         </div>
-        
+
         {/* Personal Details Form */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block font-semibold text-base leading-relaxed">First Name</label>
-            <input 
-              name="firstName" 
-              value={personal.firstName} 
-              onChange={handlePersonalChange} 
-              className="input" 
-              required 
+            <input
+              name="firstName"
+              value={personal.firstName}
+              onChange={handlePersonalChange}
+              className="input"
+              required
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Middle Name</label>
-            <input 
-              name="middleName" 
-              value={personal.middleName} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="middleName"
+              value={personal.middleName}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Last Name</label>
-            <input 
-              name="lastName" 
-              value={personal.lastName} 
-              onChange={handlePersonalChange} 
-              className="input" 
-              required 
+            <input
+              name="lastName"
+              value={personal.lastName}
+              onChange={handlePersonalChange}
+              className="input"
+              required
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Gender</label>
-            <select 
-              name="gender" 
-              value={personal.gender} 
-              onChange={handlePersonalChange} 
-              className="input" 
-              required 
+            <select
+              name="gender"
+              value={personal.gender}
+              onChange={handlePersonalChange}
+              className="input"
+              required
               disabled={!editMode.personal}
             >
               <option value="">Select</option>
@@ -757,60 +773,60 @@ function ProfileTabs() {
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Aadhaar Number</label>
-            <input 
-              name="aadhaar" 
-              value={personal.aadhaar} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="aadhaar"
+              value={personal.aadhaar}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">PAN Number</label>
-            <input 
-              name="pan" 
-              value={personal.pan} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="pan"
+              value={personal.pan}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">PIS/PIN Number</label>
-            <input 
-              name="pisPin" 
-              value={personal.pisPin} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="pisPin"
+              value={personal.pisPin}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Email</label>
-            <input 
-              name="email" 
-              value={personal.email} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="email"
+              value={personal.email}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Pay Level</label>
-            <input 
-              name="payLevel" 
-              value={personal.payLevel} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="payLevel"
+              value={personal.payLevel}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Category</label>
-            <select 
-              name="category" 
-              value={personal.category} 
-              onChange={handlePersonalChange} 
+            <select
+              name="category"
+              value={personal.category}
+              onChange={handlePersonalChange}
               className="input"
               disabled={!editMode.personal}
             >
@@ -823,51 +839,51 @@ function ProfileTabs() {
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Education Qualification</label>
-            <input 
-              name="educationQualification" 
-              value={personal.educationQualification} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="educationQualification"
+              value={personal.educationQualification}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">University</label>
-            <input 
-              name="university" 
-              value={personal.university} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="university"
+              value={personal.university}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Subject</label>
-            <input 
-              name="subject" 
-              value={personal.subject} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <input
+              name="subject"
+              value={personal.subject}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div className="md:col-span-2">
             <label className="block font-semibold text-base leading-relaxed">Permanent Address</label>
-            <textarea 
-              name="permAddress" 
-              value={personal.permAddress} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <textarea
+              name="permAddress"
+              value={personal.permAddress}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
           <div className="md:col-span-2">
             <label className="block font-semibold text-base leading-relaxed">Temporary Address</label>
-            <textarea 
-              name="tempAddress" 
-              value={personal.tempAddress} 
-              onChange={handlePersonalChange} 
-              className="input" 
+            <textarea
+              name="tempAddress"
+              value={personal.tempAddress}
+              onChange={handlePersonalChange}
+              className="input"
               disabled={!editMode.personal}
             />
           </div>
@@ -901,7 +917,7 @@ function ProfileTabs() {
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Saving...' : 'Save Changes'}
-                ) 
+                )
               </button>
               <button
                 onClick={() => handleCancelEdit('service')}
@@ -918,10 +934,10 @@ function ProfileTabs() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block font-semibold text-base leading-relaxed">Designation</label>
-            <select 
-              name="designation" 
-              value={service.designation} 
-              onChange={handleServiceChange} 
+            <select
+              name="designation"
+              value={service.designation}
+              onChange={handleServiceChange}
               className="input"
               disabled={!editMode.service}
             >
@@ -932,12 +948,12 @@ function ProfileTabs() {
             </select>
           </div>
           {service.designation && (
-          <div>
+            <div>
               <label className="block font-semibold text-base leading-relaxed">Sub-Designation</label>
-              <select 
-                name="subDesignation" 
-                value={service.subDesignation} 
-                onChange={handleServiceChange} 
+              <select
+                name="subDesignation"
+                value={service.subDesignation}
+                onChange={handleServiceChange}
                 className="input"
                 disabled={!editMode.service}
               >
@@ -946,35 +962,35 @@ function ProfileTabs() {
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
-          </div>
+            </div>
           )}
           <div>
             <label className="block font-semibold text-base leading-relaxed">Pay Level</label>
-            <input 
-              name="payLevel" 
-              value={service.payLevel} 
-              onChange={handleServiceChange} 
-              className="input" 
+            <input
+              name="payLevel"
+              value={service.payLevel}
+              onChange={handleServiceChange}
+              className="input"
               disabled={!editMode.service}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Group</label>
-            <input 
-              name="group" 
-              value={service.group} 
-              onChange={handleServiceChange} 
-              className="input" 
+            <input
+              name="group"
+              value={service.group}
+              onChange={handleServiceChange}
+              className="input"
               disabled={!editMode.service}
             />
           </div>
           <div>
             <label className="block font-semibold text-base leading-relaxed">Supervisor</label>
-            <input 
-              name="supervisor" 
-              value={service.supervisor} 
-              onChange={handleServiceChange} 
-              className="input" 
+            <input
+              name="supervisor"
+              value={service.supervisor}
+              onChange={handleServiceChange}
+              className="input"
               disabled={!editMode.service}
             />
           </div>
@@ -1028,191 +1044,191 @@ function ProfileTabs() {
   // Render: renderFamily
   const renderFamily = () => (
     <div className="space-y-6">
-    {/* Edit/Save/Cancel Buttons */}
-    <div className="flex justify-end gap-4 mb-4">
-      {!editMode.family && (
-        <button
-          className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded"
-          onClick={() => handleEditTab('family')}
-        >
-          Edit
-        </button>
-      )}
-      {editMode.family && (
-        <>
+      {/* Edit/Save/Cancel Buttons */}
+      <div className="flex justify-end gap-4 mb-4">
+        {!editMode.family && (
           <button
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
-            onClick={() => handleSaveTab('family')}
+            className="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded"
+            onClick={() => handleEditTab('family')}
           >
-            Save
+            Edit
           </button>
-          <button
-            className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded"
-            onClick={() => handleCancelEdit('family')}
-          >
-            Cancel
-          </button>
-        </>
-      )}
-    </div>
+        )}
+        {editMode.family && (
+          <>
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+              onClick={() => handleSaveTab('family')}
+            >
+              Save
+            </button>
+            <button
+              className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded"
+              onClick={() => handleCancelEdit('family')}
+            >
+              Cancel
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Spouse */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowSpouse(v => !v)}>
-        <span>Spouse Details</span>
-        <span>{showSpouse ? '-' : '+'}</span>
-      </button>
-      {showSpouse && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          <div>
-            <label className="block font-medium text-black">Full Name</label>
-            <input name="name" value={family.spouse.name} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
+        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowSpouse(v => !v)}>
+          <span>Spouse Details</span>
+          <span>{showSpouse ? '-' : '+'}</span>
+        </button>
+        {showSpouse && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block font-medium text-black">Full Name</label>
+              <input name="name" value={family.spouse.name} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
+            </div>
+            <div>
+              <label className="block font-medium text-black">DOB</label>
+              <DatePicker
+                selected={family.spouse.dob ? new Date(family.spouse.dob) : null}
+                onChange={date => handleSpouseChange({ target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+                customInput={<CustomDateInput placeholder="Select date" />}
+                disabled={!editMode.family}
+                dateFormat="yyyy-MM-dd"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-black">Occupation</label>
+              <input name="occupation" value={family.spouse.occupation} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
+            </div>
           </div>
-          <div>
-            <label className="block font-medium text-black">DOB</label>
-            <DatePicker
-              selected={family.spouse.dob ? new Date(family.spouse.dob) : null}
-              onChange={date => handleSpouseChange({ target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
-              customInput={<CustomDateInput placeholder="Select date" />}
-              disabled={!editMode.family}
-              dateFormat="yyyy-MM-dd"
-              showYearDropdown
-              showMonthDropdown
-              dropdownMode="select"
-            />
-          </div>
-          <div>
-            <label className="block font-medium text-black">Occupation</label>
-            <input name="occupation" value={family.spouse.occupation} onChange={handleSpouseChange} className="input" disabled={!editMode.family} />
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
 
       {/* Children */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowChildren(v => !v)}>
-        <span>Children Details</span>
-        <span>{showChildren ? '-' : '+'}</span>
-      </button>
-      {showChildren && (
-        <div className="space-y-4 mt-4">
-          {family.children.map((child, idx) => (
-            <div key={idx} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-blue-50 rounded-lg p-4">
-              <div>
-                <label className="block font-medium text-black">Name</label>
-                <input name="name" value={child.name} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family} />
-              </div>
-              <div>
-                <label className="block font-medium text-black">Gender</label>
-                <select name="gender" value={child.gender} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family}>
-                  <option value="">Select</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-black">DOB</label>
-                <DatePicker
-                  selected={child.dob ? new Date(child.dob) : null}
-                  onChange={date => handleChildChange(idx, { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
-                  customInput={<CustomDateInput placeholder="Select date" />}
-                  disabled={!editMode.family}
-                  dateFormat="yyyy-MM-dd"
-                  showYearDropdown
-                  showMonthDropdown
-                  dropdownMode="select"
-                />
-              </div>
-              {editMode.family && (
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => handleRemoveChild(idx)} className="ml-2 text-red-500 bg-white border border-red-200 rounded-full p-2 hover:bg-red-50 transition"><FaTrash /></button>
+        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowChildren(v => !v)}>
+          <span>Children Details</span>
+          <span>{showChildren ? '-' : '+'}</span>
+        </button>
+        {showChildren && (
+          <div className="space-y-4 mt-4">
+            {family.children.map((child, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-blue-50 rounded-lg p-4">
+                <div>
+                  <label className="block font-medium text-black">Name</label>
+                  <input name="name" value={child.name} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family} />
                 </div>
-              )}
-            </div>
-          ))}
-          {editMode.family && (
-            <button type="button" onClick={handleAddChild} className="btn-primary flex items-center gap-2 mt-2"><FaPlus /> Add Child</button>
-          )}
-        </div>
-      )}
-    </div>
+                <div>
+                  <label className="block font-medium text-black">Gender</label>
+                  <select name="gender" value={child.gender} onChange={e => handleChildChange(idx, e)} className="input" disabled={!editMode.family}>
+                    <option value="">Select</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-medium text-black">DOB</label>
+                  <DatePicker
+                    selected={child.dob ? new Date(child.dob) : null}
+                    onChange={date => handleChildChange(idx, { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+                    customInput={<CustomDateInput placeholder="Select date" />}
+                    disabled={!editMode.family}
+                    dateFormat="yyyy-MM-dd"
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
+                  />
+                </div>
+                {editMode.family && (
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => handleRemoveChild(idx)} className="ml-2 text-red-500 bg-white border border-red-200 rounded-full p-2 hover:bg-red-50 transition"><FaTrash /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {editMode.family && (
+              <button type="button" onClick={handleAddChild} className="btn-primary flex items-center gap-2 mt-2"><FaPlus /> Add Child</button>
+            )}
+          </div>
+        )}
+      </div>
       {/* Parents */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowParents(v => !v)}>
-        <span>Parent Details</span>
-        <span>{showParents ? '-' : '+'}</span>
-      </button>
-      {showParents && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          <div>
-            <label className="block font-medium text-black">Father's Name</label>
-            <input name="name" value={family.father.name} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
-            <label className="block font-medium text-black mt-2">DOB</label>
-            <DatePicker
-              selected={family.father.dob ? new Date(family.father.dob) : null}
-              onChange={date => handleParentChange('father', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
-              customInput={<CustomDateInput placeholder="Select date" />}
-              disabled={!editMode.family}
-              dateFormat="yyyy-MM-dd"
-              showYearDropdown
-              showMonthDropdown
-              dropdownMode="select"
-            />
-            <label className="block font-medium text-black mt-2">Address (if different)</label>
-            <input name="address" value={family.father.address} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
+        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowParents(v => !v)}>
+          <span>Parent Details</span>
+          <span>{showParents ? '-' : '+'}</span>
+        </button>
+        {showParents && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block font-medium text-black">Father's Name</label>
+              <input name="name" value={family.father.name} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
+              <label className="block font-medium text-black mt-2">DOB</label>
+              <DatePicker
+                selected={family.father.dob ? new Date(family.father.dob) : null}
+                onChange={date => handleParentChange('father', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+                customInput={<CustomDateInput placeholder="Select date" />}
+                disabled={!editMode.family}
+                dateFormat="yyyy-MM-dd"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+              />
+              <label className="block font-medium text-black mt-2">Address (if different)</label>
+              <input name="address" value={family.father.address} onChange={e => handleParentChange('father', e)} className="input" disabled={!editMode.family} />
+            </div>
+            <div>
+              <label className="block font-medium text-black">Mother's Name</label>
+              <input name="name" value={family.mother.name} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
+              <label className="block font-medium text-black mt-2">DOB</label>
+              <DatePicker
+                selected={family.mother.dob ? new Date(family.mother.dob) : null}
+                onChange={date => handleParentChange('mother', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
+                customInput={<CustomDateInput placeholder="Select date" />}
+                disabled={!editMode.family}
+                dateFormat="yyyy-MM-dd"
+                showYearDropdown
+                showMonthDropdown
+                dropdownMode="select"
+              />
+              <label className="block font-medium text-black mt-2">Address (if different)</label>
+              <input name="address" value={family.mother.address} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
+            </div>
           </div>
-          <div>
-            <label className="block font-medium text-black">Mother's Name</label>
-            <input name="name" value={family.mother.name} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
-            <label className="block font-medium text-black mt-2">DOB</label>
-            <DatePicker
-              selected={family.mother.dob ? new Date(family.mother.dob) : null}
-              onChange={date => handleParentChange('mother', { target: { name: 'dob', value: date?.toISOString().slice(0, 10) || '' } })}
-              customInput={<CustomDateInput placeholder="Select date" />}
-              disabled={!editMode.family}
-              dateFormat="yyyy-MM-dd"
-              showYearDropdown
-              showMonthDropdown
-              dropdownMode="select"
-            />
-            <label className="block font-medium text-black mt-2">Address (if different)</label>
-            <input name="address" value={family.mother.address} onChange={e => handleParentChange('mother', e)} className="input" disabled={!editMode.family} />
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
 
       {/* Emergency Contact */}
       <div className="rounded-xl shadow bg-white p-6 mb-2">
-      <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowEmergency(v => !v)}>
-        <span>Emergency Contact</span>
-        <span>{showEmergency ? '-' : '+'}</span>
-      </button>
-      {showEmergency && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          <div>
-            <label className="block font-medium text-black">Name</label>
-            <input name="name" value={family.emergency.name} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+        <button type="button" className="flex items-center w-full justify-between bg-[#003366] text-white px-4 py-3 rounded-t-xl font-semibold text-lg focus:outline-none" onClick={() => setShowEmergency(v => !v)}>
+          <span>Emergency Contact</span>
+          <span>{showEmergency ? '-' : '+'}</span>
+        </button>
+        {showEmergency && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block font-medium text-black">Name</label>
+              <input name="name" value={family.emergency.name} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+            </div>
+            <div>
+              <label className="block font-medium text-black">Relation</label>
+              <input name="relation" value={family.emergency.relation} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+            </div>
+            <div>
+              <label className="block font-medium text-black">Mobile Number</label>
+              <input name="mobile" value={family.emergency.mobile} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+            </div>
+            <div className="md:col-span-2 lg:col-span-1">
+              <label className="block font-medium text-black">Address</label>
+              <input name="address" value={family.emergency.address} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
+            </div>
           </div>
-          <div>
-            <label className="block font-medium text-black">Relation</label>
-            <input name="relation" value={family.emergency.relation} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
-          </div>
-          <div>
-            <label className="block font-medium text-black">Mobile Number</label>
-            <input name="mobile" value={family.emergency.mobile} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
-          </div>
-          <div className="md:col-span-2 lg:col-span-1">
-            <label className="block font-medium text-black">Address</label>
-            <input name="address" value={family.emergency.address} onChange={handleEmergencyChange} className="input" disabled={!editMode.family} />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 
   // === Documents Tab ===
   // State: docFiles, editMode.documents, backupData.documents
@@ -1291,23 +1307,23 @@ function ProfileTabs() {
           <div className="font-bold text-xl mb-8 text-center">
             {personal.firstName} {personal.lastName}
           </div>
-          
+
           {/* Sidebar Buttons */}
-          <button 
+          <button
             className="w-11/12 py-3 mb-3 bg-white text-[#003366] border-none rounded font-bold text-base cursor-pointer hover:bg-gray-100 transition-colors"
             onClick={handleGoToDashboard}
           >
             SEARCH
           </button>
-          
-          <button 
+
+          <button
             className="w-11/12 py-3 mb-3 bg-red-600 text-white border-none rounded font-bold text-base cursor-pointer hover:bg-red-700 transition-colors"
             onClick={handleLogout}
           >
             LOGOUT
           </button>
-          
-          <button 
+
+          <button
             className="w-11/12 py-3 mt-auto mb-5 bg-white text-[#003366] border-none rounded font-bold text-base cursor-pointer hover:bg-gray-100 transition-colors"
             onClick={handleSidebarToggle}
           >
@@ -1316,7 +1332,7 @@ function ProfileTabs() {
         </div>
       )}
       {/* Tabs */}
-      <nav className="top-[56px] z-10 bg-white shadow flex gap-4 px-6 py-4 border-b" style={{fontFamily: 'Inter, Roboto, Open Sans, sans-serif'}}>
+      <nav className="top-[56px] z-10 bg-white shadow flex gap-4 px-6 py-4 border-b" style={{ fontFamily: 'Inter, Roboto, Open Sans, sans-serif' }}>
         {TAB_LIST.map((t, i) => (
           <button
             key={t.label}
@@ -1325,7 +1341,7 @@ function ProfileTabs() {
                 ? 'bg-[#003366] text-white shadow border-b-4 border-[#003366]'
                 : 'bg-blue-50 text-[#003366] hover:bg-blue-100'}
             `}
-            style={{minWidth: '180px'}}
+            style={{ minWidth: '180px' }}
             onClick={() => setTab(i)}
           >
             {React.cloneElement(t.icon, { className: 'text-lg' })} {t.label}
@@ -1391,4 +1407,4 @@ function ProfileTabs() {
   );
 }
 
-export default ProfileTabs; 
+export default ProfileTabs;
