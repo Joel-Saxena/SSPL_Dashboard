@@ -1,8 +1,9 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FaSignOutAlt, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+
+const DRDO_LOGO_URL = '/DrdoLogo.png';
 
 export default function AdminDashboard() {
   const [scientists, setScientists] = useState([]);
@@ -17,7 +18,7 @@ export default function AdminDashboard() {
   const role = localStorage.getItem('role');
   const groupId = localStorage.getItem('group_id');
 
-  // ✅ First, check authorization (no early return)
+  // Authorization
   useEffect(() => {
     if (!token || role !== 'admin') {
       alert('Unauthorized. Please login as Admin.');
@@ -27,201 +28,151 @@ export default function AdminDashboard() {
     }
   }, [navigate, token, role]);
 
-  // ✅ Fetch scientists only if authorized
+  // Fetch scientists
   useEffect(() => {
     const fetchScientists = async () => {
       try {
         setLoading(true);
         const response = await axios.get('http://localhost:5000/api/admin/scientists', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
+          headers: { Authorization: `Bearer ${token}` },
           params: { group_id: groupId }
         });
         setScientists(response.data);
         setError(null);
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
-        console.error('API Error:', err.response ? err.response.data : err.message);
         setError('Failed to load scientists');
       } finally {
         setLoading(false);
       }
     };
-
-    if (authorized) {
-      fetchScientists();
-    }
+    if (authorized) fetchScientists();
   }, [authorized, token, groupId]);
 
-  // 🧤 Block rendering until authorization is confirmed
-  if (!authorized) return null;
-
-  // 🔍 Handle scientist search
+  // Search
   const handleSearch = async () => {
     if (searchTerm.trim() === '') return;
-
     try {
       setLoading(true);
       const response = await axios.get('http://localhost:5000/api/admin/search', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        params: {
-          ScientistName: searchTerm,
-          admin_group_id: groupId
-        }
+        headers: { Authorization: `Bearer ${token}` },
+        params: { ScientistName: searchTerm, admin_group_id: groupId }
       });
       setScientists(response.data);
       setError(null);
-    } catch (err) {
-      console.error('API Error:', err.response ? err.response.data : err.message);
+    } catch {
       setError('Error searching scientists');
     } finally {
       setLoading(false);
     }
   };
 
-const handleRowClick = (id) => {
-  const group_id = localStorage.getItem('group_id'); // ← get from storage
-  navigate(`/profile?emp_id=${id}&group_id=${group_id}`);
-};
+  const handleRowClick = (id) => {
+    navigate(`/profile?emp_id=${id}&group_id=${groupId}`);
+  };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/');
+  };
+
+  if (!authorized) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#F4F6F9',
-        fontFamily: 'Segoe UI, sans-serif',
-        boxSizing: 'border-box',
-        padding: '40px',
-        overflow: 'auto'
-      }}
-    >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-  <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#003366' }}>
-    DRDO Admin Dashboard
-  </h1>
-  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-    <div style={{ fontSize: '16px', color: '#555' }}>
-      Total Scientists: <strong>{scientists.length}</strong>
-    </div>
-    <button
-      onClick={() => {
-        localStorage.clear();
-        navigate('/');
-      }}
-      style={{
-        padding: '8px 16px',
-        backgroundColor: '#c0392b',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        marginLeft: '20px'
-      }}
-    >
-      Logout
-    </button>
-  </div>
-</header>
-
-
-      <div style={{ display: 'flex', marginBottom: '24px' }}>
-        <input
-          type="text"
-          placeholder="Search scientist by name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: '10px 12px',
-            fontSize: '16px',
-            borderRadius: '6px',
-            border: '1px solid #ccc',
-            width: '300px',
-            marginRight: '10px',
-            backgroundColor: '#fff',
-            color: '#000',
-          }}
-        />
-        <button
-          onClick={handleSearch}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#0057B8',
-            color: 'black',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: '500',
-          }}
-        >
-          Search
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Loading scientists...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>{error}</p>
-      ) : scientists.length === 0 ? (
-        <p>No scientists found.</p>
-      ) : (
-        <div style={{
-          border: '1px solid #D1D5DB',
-          borderRadius: '8px',
-          backgroundColor: '#FFFFFF',
-          overflowX: 'auto'
-        }}>
-          <div style={{
-            display: 'flex',
-            padding: '12px 20px',
-            backgroundColor: '#003366',
-            color: '#FFFFFF',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px'
-          }}>
-            <div style={{ width: '80px' }}>ID</div>
-            <div style={{ flex: 1 }}>Name</div>
-            <div style={{ width: '100px', textAlign: 'center' }}>Grade</div>
-            <div style={{ width: '140px', textAlign: 'center' }}>Category</div>
-            <div style={{ width: '120px', textAlign: 'center' }}>Pay Level</div>
-            <div style={{ flex: 1, textAlign: 'right' }}>Research Area</div>
+    <div className="min-h-screen flex flex-col bg-[#e7ecf3] font-sans">
+      {/* Header */}
+      <header className="bg-[#1b2940] text-white shadow relative z-30">
+        <div className="max-w-6xl mx-auto flex items-center justify-between py-3 px-4 lg:px-6">
+          <div className="flex items-center gap-3">
+            <img src={DRDO_LOGO_URL} alt="DRDO Logo" className="h-10 w-10 rounded-full bg-white border border-blue-100 p-1 shadow" />
+            <span className="font-extrabold text-lg lg:text-xl uppercase tracking-wider">
+              Defence Research and Development Organization
+            </span>
           </div>
-
-          {scientists.map((sci, index) => (
-            <div
-              key={sci.emp_id}
-              onClick={() => handleRowClick(sci.emp_id)}
-              style={{
-                display: 'flex',
-                padding: '14px 20px',
-                borderBottom: index === scientists.length - 1 ? 'none' : '1px solid #EEE',
-                cursor: 'pointer',
-                backgroundColor: index % 2 === 0 ? '#F9FAFB' : '#FFFFFF',
-                transition: 'background-color 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6F0FF'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'}
+          <div className="flex items-center gap-6">
+            <span className="font-medium text-blue-100 text-base">Total Scientists: <span className="font-bold text-white">{scientists.length}</span></span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold transition focus:outline-none"
             >
-              <div style={{ width: '80px', color: '#1A202C' }}>{sci.emp_id}</div>
-              <div style={{ flex: 1, fontWeight: '500', color: '#1A202C' }}>{sci.firstname} {sci.lastname}</div>
-              <div style={{ width: '100px', textAlign: 'center', color: '#4A5568' }}>{sci.grade}</div>
-              <div style={{ width: '140px', textAlign: 'center', color: '#4A5568' }}>{sci.category}</div>
-              <div style={{ width: '120px', textAlign: 'center', color: '#4A5568' }}>{sci.pay_level}</div>
-              <div style={{ flex: 1, textAlign: 'right', color: '#4A5568' }}>{sci.research_area}</div>
-            </div>
-          ))}
+              <FaSignOutAlt /> Logout
+            </button>
+          </div>
         </div>
-      )}
+        <div className="w-full h-1 bg-gradient-to-r from-[#0a58aa] via-[#1464c8] to-[#00a3db]" />
+      </header>
+
+      {/* Dashboard Content */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-8 py-8">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1b2940]">
+            Admin Dashboard
+          </h1>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Search scientist by name…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+              className="px-4 py-2 rounded-md border border-slate-300 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none bg-white text-black text-base w-64"
+            />
+            <button
+              onClick={handleSearch}
+              className="flex items-center gap-1 px-4 py-2 rounded-md bg-[#195394] hover:bg-[#254d99] text-white font-medium shadow transition"
+            >
+              <FaSearch /> Search
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center text-blue-900 font-semibold py-10">Loading scientists…</div>
+        ) : error ? (
+          <div className="text-center text-red-600 font-semibold">{error}</div>
+        ) : scientists.length === 0 ? (
+          <div className="text-center text-gray-500 italic">No scientists found.</div>
+        ) : (
+          <div className="rounded-xl border border-blue-100 shadow bg-white overflow-x-auto mt-4">
+            <div className="min-w-[650px]">
+              <div className="flex px-6 py-3 bg-[#003366] text-white font-bold text-base rounded-t-xl">
+                <div className="w-24">ID</div>
+                <div className="flex-1">Name</div>
+                <div className="w-28 text-center">Grade</div>
+                <div className="w-36 text-center">Category</div>
+                <div className="w-32 text-center">Pay Level</div>
+                <div className="flex-1 text-right">Research Area</div>
+              </div>
+              {scientists.map((sci, index) => (
+                <div
+                  key={sci.emp_id}
+                  tabIndex={0}
+                  onClick={() => handleRowClick(sci.emp_id)}
+                  className={`
+                    flex px-6 py-3 cursor-pointer
+                    transition-colors duration-150
+                    ${index % 2 === 0 ? 'bg-blue-50' : 'bg-white'} 
+                    hover:bg-blue-100 focus:bg-blue-200
+                  `}
+                  style={{ outline: 'none' }}
+                >
+                  <div className="w-24 text-black font-medium">{sci.emp_id}</div>
+                  <div className="flex-1 text-black font-semibold">{sci.firstname} {sci.lastname}</div>
+                  <div className="w-28 text-center text-gray-700">{sci.grade}</div>
+                  <div className="w-36 text-center text-gray-700">{sci.category}</div>
+                  <div className="w-32 text-center text-gray-700">{sci.pay_level}</div>
+                  <div className="flex-1 text-right text-gray-700">{sci.research_area}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-[#1b2940] text-white text-center py-2 text-xs border-t border-blue-900">
+        &copy; {new Date().getFullYear()} DRDO, Ministry Of India, India. All rights reserved.
+      </footer>
     </div>
   );
 }
-

@@ -235,10 +235,6 @@ function ProfileTabs() {
                 });
               }
               })
-              .catch(err => {
-              // It's okay if not found, just skip
-              console.log("No profile picture found for this user.");
-              });
 
             // Fetch Aadhaar document if exists
             axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=document_aadhaar`, {
@@ -256,10 +252,6 @@ function ProfileTabs() {
                 }));
               }
               })
-              .catch(err => {
-              // It's okay if not found, just skip
-              console.log("No Aadhaar document found for this user.");
-              });
 
             // Fetch PAN document if exists
             axios.get(`http://localhost:5000/api/admin/getfile?emp_id=${empId}&file_type=document_pan`, {
@@ -277,12 +269,6 @@ function ProfileTabs() {
                 }));
               }
               })
-              .catch(err => {
-              // It's okay if not found, just skip
-              console.log("No PAN document found for this user.");
-              });
-
-
 
           } catch (err) {
             if (err.response && (err.response.status === 403 || err.response.status === 404)) {
@@ -347,7 +333,7 @@ function ProfileTabs() {
     };
 
     fetchUserData();
-  }, [empId]);
+  }, [empId, navigate]);
 
 
   const [tab, setTab] = useState(0);
@@ -1249,7 +1235,7 @@ function ProfileTabs() {
     <div
       className="flex flex-col min-h-screen w-full bg-cover bg-center"
       style={{
-        backgroundImage: 'url("/Bgdrdo.jpeg")',
+        backgroundImage: 'url("/bgdrdo.png")',
         minHeight: '100vh',
         minWidth: '100vw',
         fontFamily: 'Inter, Roboto, Open Sans, sans-serif',

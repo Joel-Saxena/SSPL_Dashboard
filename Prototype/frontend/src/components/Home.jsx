@@ -1,145 +1,174 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const DRDO_LOGO_URL = "/DrdoLogo.png"; // Use your actual logo path
+
 const Home = () => {
   const [login, setLogin] = useState({ employeeId: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLogin((prev) => ({ ...prev, [name]: value }));
+    setErrorMsg("");
   };
 
   const handleLoginSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg("");
 
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        emp_id: login.employeeId,
-        password: login.password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      // Save token and user info
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("emp_id", data.emp_id);
-      if (data.group_id) localStorage.setItem("group_id", data.group_id);
-
-      // Redirect based on role
-      if (data.role === "admin") {
-        navigate("/AdminDashboard");
-      } else if (data.role === "super_admin") {
-        navigate("/SupervisorDashboard");
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emp_id: login.employeeId,
+          password: login.password,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("emp_id", data.emp_id);
+        if (data.group_id) localStorage.setItem("group_id", data.group_id);
+        if (data.role === "admin") {
+          navigate("/AdminDashboard");
+        } else if (data.role === "super_admin") {
+          navigate("/SupervisorDashboard");
+        } else {
+          setErrorMsg("Unauthorized role. Access denied.");
+        }
       } else {
-        alert("Unauthorized role. Access denied.");
+        setErrorMsg(data.message || "Invalid credentials");
       }
-    } else {
-      alert(data.message || "Invalid credentials");
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      setErrorMsg("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("Server error. Please try again later.");
-  }
-};
+  };
 
   return (
-    <div
-      className="flex flex-col min-h-screen w-full bg-cover bg-center"
-      style={{ 
-        backgroundImage: 'url("/Bgdrdo.jpeg")',
-        minHeight: "100vh",
-        minWidth: "100vw"
-      }}
-    >
+    
+    <div className="min-h-screen flex flex-col bg-[#e7ecf3]">
       {/* Header */}
-      <header className="bg-blue-900 text-white py-4 text-center shadow-md">
-        <div className="overflow-hidden whitespace-nowrap">
-          <p className="animate-scroll text-3xl font-bold">
-            Welcome to DRDO
-          </p>
+      <header className="bg-[#1b2940] text-white shadow-sm">
+        <div className="flex items-center justify-between max-w-5xl mx-auto py-3 px-3">
+          <div className="flex items-center space-x-3">
+            <img src={DRDO_LOGO_URL}
+                 alt="DRDO Logo"
+                 className="h-12 w-12 rounded-full border border-blue-100 shadow"
+            />
+            <span className="font-extrabold tracking-widest text-xl lg:text-2xl uppercase"
+                  style={{ letterSpacing: "2.5px", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
+            >
+              Defence Research and Development Organisation
+            </span>
+          </div>
         </div>
+        <div className="w-full h-1 bg-gradient-to-r from-[#0a58aa] via-[#1464c8] to-[#00a3db]" />
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow flex items-center justify-center px-4 py-10 w-full h-full">
-        <div className="bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-2xl w-full md:w-3/4 flex flex-col md:flex-row overflow-hidden">
-          {/* Login Form */}
-          <div className="w-full md:w-1/2 p-8">
-            <h2 className="text-3xl font-bold text-blue-800 text-center mb-6">Login</h2>
-            <form onSubmit={handleLoginSubmit} className="space-y-5">
+      <main className="flex flex-1 items-center justify-center py-12 px-3">
+        <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg border border-[#c5d4e9] flex flex-col md:flex-row overflow-hidden">
+          {/* Login Card */}
+          <section className="w-full md:w-1/2 px-8 py-10 flex flex-col justify-center">
+            <h2 className="text-blue-900 text-2xl font-bold mb-2 text-center" style={{ fontFamily: "inherit" }}>
+              <span className="border-b-2 border-blue-800 pb-0.5">DRDO Login</span>
+            </h2>
+            <p className="mb-6 text-center text-gray-500 text-sm font-medium">
+              Authorized Access Only
+            </p>
+            <form onSubmit={handleLoginSubmit} className="space-y-6" aria-label="Login form">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                <label htmlFor="employeeId" className="block text-base font-semibold text-gray-700 mb-1">
+                  Employee ID
+                </label>
                 <input
-                  type="text"
+                  id="employeeId"
                   name="employeeId"
+                  type="text"
+                  autoComplete="username"
+                  maxLength={30}
                   value={login.employeeId}
                   onChange={handleLoginChange}
-                  placeholder="Enter Employee ID"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  placeholder="e.g., 123456"
+                  className="w-full px-4 py-2 border border-slate-300 rounded focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-400 text-gray-900 bg-gray-50 shadow-sm transition"
                   required
+                  aria-required="true"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label htmlFor="password" className="block text-base font-semibold text-gray-700 mb-1">
+                  Password
+                </label>
                 <input
-                  type="password"
+                  id="password"
                   name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  maxLength={30}
                   value={login.password}
-                  placeholder="Enter Password"
                   onChange={handleLoginChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  placeholder="Enter Password"
+                  className="w-full px-4 py-2 border border-slate-300 rounded focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-400 text-gray-900 bg-gray-50 shadow-sm transition"
                   required
+                  aria-required="true"
                 />
               </div>
+              {errorMsg &&
+                <div className="bg-red-50 border border-red-200 text-red-800 rounded px-3 py-2 text-sm font-medium" role="alert">
+                  {errorMsg}
+                </div>
+              }
               <button
                 type="submit"
-                className="w-full bg-blue-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-800 transition"
+                className="w-full bg-[#1b2940] text-white py-2.5 rounded font-semibold hover:bg-blue-900 transition tracking-wide shadow-sm flex items-center justify-center gap-2"
+                disabled={loading}
               >
-                Submit
+                {loading && (
+                  <svg aria-hidden="true" className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v3l4-4-4-4v3c-5.523 0-10 4.477-10 10h3z"
+                    />
+                  </svg>
+                )}
+                {loading ? "Signing in..." : "Login"}
               </button>
             </form>
-          </div>
-
-          {/* Optional Welcome Section (Right) */}
-          <div className="hidden md:flex md:w-1/2 items-center justify-center bg-blue-800 text-white p-8">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold mb-2">Digital Scientist Portal</h3>
-              <p className="text-sm text-blue-100">
-                Secure access for DRDO administrators and scientists to manage records, data, and analytics.
-              </p>
-            </div>
-          </div>
+            
+          </section>
+          {/* Right Info Panel */}
+          <aside className="hidden md:flex md:w-1/2 flex-col items-center justify-center bg-gradient-to-tr from-[#1b2940]  to-[#2550A6] text-white p-6">
+            <img src={DRDO_LOGO_URL} alt="DRDO Logo" className="mb-4 h-16 w-16 rounded-full shadow border border-blue-200 bg-white p-1" />
+            <h3 className="font-bold text-lg text-center mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+              Digital Scientist Portal
+            </h3>
+            <div className="w-9 h-0.5 rounded-full bg-blue-300 mb-2"></div>
+          </aside>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-blue-900 text-white text-center py-3 text-sm">
-        &copy; {new Date().getFullYear()} DRDO. All rights reserved.
+      <footer className="bg-[#1b2940] text-white text-center py-2 border-t border-blue-900 text-xs">
+        &copy; {new Date().getFullYear()} DRDO, Ministry Of Defence, India. All rights reserved.
       </footer>
-
-      {/* Custom Scroll Animation */}
-      <style>
-        {`
-          .animate-scroll {
-            display: inline-block;
-            animation: scrollText 10s linear infinite;
-          }
-
-          @keyframes scrollText {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-          }
-        `}
-      </style>
     </div>
   );
 };
